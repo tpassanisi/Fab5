@@ -346,8 +346,8 @@ socket.on('game-started', (data) => {
 });
 
 const CATEGORY_COLORS = {
-  Sports: '#e74c3c', Science: '#3498db', Acting: '#9b59b6',
-  Music: '#e67e22', Leaders: '#2ecc71', Culture: '#1abc9c', Infamous: '#7f8c8d',
+  Sports: '#ff2a6d', Science: '#00f0ff', Acting: '#b026ff',
+  Music: '#ff6b00', Leaders: '#05ffa1', Culture: '#00b4d8', Infamous: '#8b8b8b',
 };
 
 function getInitials(name) {
