@@ -380,10 +380,13 @@ input:focus { border-color: var(--neon-blue); box-shadow: 0 0 10px rgba(0,240,25
   text-align: center;
 }
 .matchup-card .card-banner {
-  height: 50px;
+  height: 65px;
   margin: -8px -8px 4px -8px;
   width: calc(100% + 16px);
   border-radius: 8px 8px 0 0;
+}
+.matchup-card .card-banner-img {
+  object-position: center 20%;
 }
 .matchup-card .card-initials {
   font-size: 16px;
@@ -473,12 +476,11 @@ input:focus { border-color: var(--neon-blue); box-shadow: 0 0 10px rgba(0,240,25
 
 /* CARD BANNER IMAGE */
 .card-banner {
-  width: 100%;
-  height: 60px;
+  width: calc(100% + 16px);
+  height: 90px;
   border-radius: 10px 10px 0 0;
   background: var(--avatar-color, #555);
   margin: -10px -8px 4px -8px;
-  width: calc(100% + 16px);
   position: relative;
   overflow: hidden;
   display: flex;
@@ -498,7 +500,7 @@ input:focus { border-color: var(--neon-blue); box-shadow: 0 0 10px rgba(0,240,25
   width: 100%;
   height: 100%;
   object-fit: cover;
-  object-position: top;
+  object-position: center 20%;
 }
 
 .card .card-name {
@@ -757,14 +759,16 @@ input:focus { border-color: var(--neon-blue); box-shadow: 0 0 10px rgba(0,240,25
   border: 1px solid rgba(0,240,255,0.3);
   border-radius: 16px;
   padding: 24px 20px;
-  width: 85%;
-  max-width: 340px;
+  width: 90%;
+  max-width: 360px;
+  max-height: 90vh;
+  overflow-y: auto;
   text-align: center;
   box-shadow: 0 0 30px rgba(0,240,255,0.15);
 }
 .card-fs-banner {
   width: calc(100% + 40px);
-  height: 120px;
+  height: 220px;
   margin: -24px -20px 12px -20px;
   border-radius: 16px 16px 0 0;
   background: var(--avatar-color, #555);
@@ -775,14 +779,14 @@ input:focus { border-color: var(--neon-blue); box-shadow: 0 0 10px rgba(0,240,25
   justify-content: center;
   box-shadow: 0 4px 20px rgba(0,0,0,0.4);
 }
-.card-fs-banner .card-initials { font-size: 36px; }
+.card-fs-banner .card-initials { font-size: 48px; }
 .card-fs-banner .card-banner-img {
   position: absolute;
   inset: 0;
   width: 100%;
   height: 100%;
   object-fit: cover;
-  object-position: top;
+  object-position: center 15%;
 }
 .card-fs-name {
   font-size: 22px;
