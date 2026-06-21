@@ -355,7 +355,7 @@ function getInitials(name) {
 }
 
 function cardImgSrc(card) {
-  const filename = card.name.replace(/\s+/g, '_').replace(/[^a-zA-Z0-9_\-áéíóúÁÉÍÓÚñÑüÜ]/g, '');
+  const filename = card.name.replace(/\s+/g, '_').replace(/[^a-zA-Z0-9_\-àáâãäåèéêëìíîïòóôõöùúûüýÿñçšžÀÁÂÃÄÅÈÉÊËÌÍÎÏÒÓÔÕÖÙÚÛÜÝŸÑÇŠŽ]/g, '');
   return `/images/cards/${filename}.png`;
 }
 
