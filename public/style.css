@@ -666,32 +666,39 @@ input:focus { border-color: var(--neon-blue); box-shadow: 0 0 10px rgba(0,240,25
 }
 
 /* CATEGORY REVEAL */
-.category-reveal-grid {
-  display: grid;
-  grid-template-columns: repeat(2, 1fr);
-  gap: 8px;
-  padding: 8px 16px;
+.cat-reveal-slot {
   width: 100%;
-  max-width: 360px;
+  height: 100%;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  overflow: hidden;
+  position: relative;
 }
-.cat-chip {
-  padding: 10px 8px;
-  background: rgba(0,240,255,0.05);
-  border: 1px solid var(--neon-blue);
-  border-radius: 8px;
-  text-align: center;
-  font-size: 13px;
-  font-weight: 700;
+.cat-reveal-item {
+  font-size: 20px;
+  font-weight: 800;
   color: var(--neon-blue);
-  box-shadow: 0 0 6px rgba(0,240,255,0.15);
-  transition: all 0.5s;
+  text-shadow: 0 0 15px rgba(0,240,255,0.6);
+  letter-spacing: 1px;
+  transition: all 0.3s ease-out;
 }
-.cat-chip.eliminated {
-  opacity: 0.2;
-  border-color: var(--accent2);
-  color: var(--text2);
-  text-decoration: line-through;
-  transform: scale(0.9);
+.cat-reveal-enter {
+  opacity: 0;
+  transform: translateY(-30px);
+}
+.cat-reveal-visible {
+  opacity: 1;
+  transform: translateY(0);
+}
+.cat-reveal-exit {
+  opacity: 0;
+  transform: translateY(30px);
+}
+.cat-reveal-done {
+  color: var(--neon-pink);
+  text-shadow: 0 0 15px rgba(255,42,109,0.6);
+  font-size: 22px;
 }
 
 /* MATCHUP BANNER */

@@ -396,49 +396,40 @@ function renderCards() {
 let draftSelectedIdx = null;
 
 function showCategoryReveal(onComplete) {
-  const eliminated = allCategories.filter(k => !activeCategories.includes(k));
-  const container = $('#your-cards');
-  container.innerHTML = '';
-
   const gameArea = $('#game-area');
-  gameArea.classList.add('expanded');
-  gameArea.innerHTML = `
-    <div class="draft-prompt">
-      <div class="draft-title">Selecting Categories...</div>
-      <div class="draft-sub">6 of 12 will be eliminated</div>
-    </div>
-  `;
+  gameArea.classList.remove('expanded');
+  gameArea.innerHTML = `<div class="cat-reveal-slot"></div>`;
 
-  const grid = document.createElement('div');
-  grid.className = 'category-reveal-grid';
-  allCategories.forEach(k => {
-    const chip = document.createElement('div');
-    chip.className = 'cat-chip';
-    chip.dataset.key = k;
-    chip.textContent = ALL_CATEGORY_FULL[k];
-    grid.appendChild(chip);
-  });
-  gameArea.appendChild(grid);
+  renderCards();
 
-  let delay = 800;
-  eliminated.forEach((k, i) => {
+  const slot = gameArea.querySelector('.cat-reveal-slot');
+  let i = 0;
+
+  function showNext() {
+    if (i >= activeCategories.length) {
+      slot.innerHTML = `<div class="cat-reveal-item cat-reveal-done">Let's Go!</div>`;
+      setTimeout(onComplete, 800);
+      return;
+    }
+
+    const key = activeCategories[i];
+    const label = ALL_CATEGORY_FULL[key];
+    slot.innerHTML = `<div class="cat-reveal-item cat-reveal-enter">${label}</div>`;
+
+    const el = slot.querySelector('.cat-reveal-item');
+    requestAnimationFrame(() => {
+      el.classList.remove('cat-reveal-enter');
+      el.classList.add('cat-reveal-visible');
+    });
+
     setTimeout(() => {
-      const chip = grid.querySelector(`[data-key="${k}"]`);
-      if (chip) chip.classList.add('eliminated');
-    }, delay + i * 600);
-  });
+      el.classList.remove('cat-reveal-visible');
+      el.classList.add('cat-reveal-exit');
+      setTimeout(() => { i++; showNext(); }, 300);
+    }, 1200);
+  }
 
-  setTimeout(() => {
-    const title = document.querySelector('.draft-title');
-    if (title) title.textContent = 'Categories Selected!';
-    const sub = document.querySelector('.draft-sub');
-    if (sub) sub.textContent = '6 active categories for this game';
-  }, delay + eliminated.length * 600);
-
-  setTimeout(() => {
-    gameArea.classList.remove('expanded');
-    onComplete();
-  }, delay + eliminated.length * 600 + 1200);
+  setTimeout(showNext, 400);
 }
 
 function showDraftScreen() {
