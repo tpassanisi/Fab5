@@ -530,7 +530,7 @@ input:focus { border-color: var(--neon-blue); box-shadow: 0 0 10px rgba(0,240,25
   justify-content: space-between;
   padding: 2px 4px;
 }
-.card .stat-val { font-weight: 700; color: var(--neon-pink); }
+.card .stat-val { font-weight: 700; color: #ffb347; }
 .card .stat.highlight {
   background: rgba(0,240,255,0.15);
   border-radius: 4px;
@@ -826,7 +826,7 @@ input:focus { border-color: var(--neon-blue); box-shadow: 0 0 10px rgba(0,240,25
 .card-fs-stat-val {
   font-size: 13px;
   font-weight: 800;
-  color: var(--neon-pink);
+  color: #ffb347;
 }
 .card-fs-stat.inactive .card-fs-stat-val {
   color: var(--text2);
