@@ -306,9 +306,11 @@ function resolveRoundForGame(game) {
       }
     });
 
+    const winnerCards = game.winner ? game.winner.cards.filter(c => !c.flipped) : [];
     io.to(roomCode).emit('game-over', {
       winnerId: game.winner?.id,
       winnerName: game.winner?.name,
+      winnerCards,
     });
     return;
   }

@@ -945,6 +945,26 @@ socket.on('game-over', (data) => {
   showScreen('gameover');
   const isMe = data.winnerId === myId;
   $('#winner-text').textContent = isMe ? 'YOU WIN!' : `${data.winnerName} Wins!`;
+
+  const cardsLeft = data.winnerCards ? data.winnerCards.length : 0;
+  $('#winner-sub').textContent = isMe
+    ? `You won with ${cardsLeft} card${cardsLeft !== 1 ? 's' : ''} remaining!`
+    : `${data.winnerName} won with ${cardsLeft} card${cardsLeft !== 1 ? 's' : ''} remaining`;
+
+  const container = $('#winner-cards');
+  container.innerHTML = '';
+  if (data.winnerCards) {
+    data.winnerCards.forEach(card => {
+      const div = document.createElement('div');
+      div.className = 'winner-card';
+      div.innerHTML = `
+        ${cardImageHTML(card)}
+        <div class="card-name">${card.name}</div>
+      `;
+      div.querySelector('.card-avatar').addEventListener('click', () => showCardFullscreen(card));
+      container.appendChild(div);
+    });
+  }
 });
 
 $('#btn-quit').addEventListener('click', () => {

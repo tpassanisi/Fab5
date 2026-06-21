@@ -592,7 +592,40 @@ input:focus { border-color: var(--neon-blue); box-shadow: 0 0 10px rgba(0,240,25
   -webkit-text-fill-color: transparent;
   text-shadow: 0 0 30px rgba(0,240,255,0.3);
 }
-.play-again-text { color: var(--text2); margin-bottom: 32px; }
+.play-again-text { color: var(--text2); margin-bottom: 16px; }
+
+.winner-cards {
+  display: flex;
+  gap: 12px;
+  justify-content: center;
+  flex-wrap: wrap;
+  margin-bottom: 24px;
+  max-width: 360px;
+}
+.winner-card {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 4px;
+  padding: 8px;
+  background: rgba(0,240,255,0.05);
+  border: 1px solid rgba(0,240,255,0.2);
+  border-radius: 10px;
+  min-width: 72px;
+}
+.winner-card .card-avatar {
+  width: 44px;
+  height: 44px;
+  box-shadow: 0 0 12px rgba(5,255,161,0.3);
+}
+.winner-card .card-initials { font-size: 16px; }
+.winner-card .card-name {
+  font-size: 10px;
+  font-weight: 700;
+  color: var(--neon-blue);
+  text-align: center;
+  line-height: 1.2;
+}
 
 /* Confirm button for card selection */
 .btn-confirm-card {
