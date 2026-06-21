@@ -375,7 +375,7 @@ input:focus { border-color: var(--neon-blue); box-shadow: 0 0 10px rgba(0,240,25
   max-width: 140px;
   background: var(--bg2);
   border: 2px solid var(--accent2);
-  border-radius: 10px;
+  border-radius: 0;
   padding: 8px;
   text-align: center;
 }
@@ -383,7 +383,7 @@ input:focus { border-color: var(--neon-blue); box-shadow: 0 0 10px rgba(0,240,25
   height: 65px;
   margin: -8px -8px 4px -8px;
   width: calc(100% + 16px);
-  border-radius: 8px 8px 0 0;
+  border-radius: 0;
 }
 .matchup-card .card-banner-img {
   object-position: center 20%;
@@ -451,7 +451,7 @@ input:focus { border-color: var(--neon-blue); box-shadow: 0 0 10px rgba(0,240,25
 .card {
   background: linear-gradient(145deg, #111122, #0a0a18);
   border: 1px solid rgba(0,240,255,0.2);
-  border-radius: 12px;
+  border-radius: 0;
   padding: 10px 8px;
   text-align: center;
   font-size: 12px;
@@ -478,7 +478,7 @@ input:focus { border-color: var(--neon-blue); box-shadow: 0 0 10px rgba(0,240,25
 .card-banner {
   width: calc(100% + 16px);
   height: 90px;
-  border-radius: 10px 10px 0 0;
+  border-radius: 0;
   background: var(--avatar-color, #555);
   margin: -10px -8px 4px -8px;
   position: relative;
@@ -614,14 +614,14 @@ input:focus { border-color: var(--neon-blue); box-shadow: 0 0 10px rgba(0,240,25
   padding: 8px;
   background: rgba(0,240,255,0.05);
   border: 1px solid rgba(0,240,255,0.2);
-  border-radius: 10px;
+  border-radius: 0;
   min-width: 72px;
 }
 .winner-card .card-banner {
   width: calc(100% + 16px);
   height: 44px;
   margin: -8px -8px 4px -8px;
-  border-radius: 8px 8px 0 0;
+  border-radius: 0;
   box-shadow: 0 0 12px rgba(5,255,161,0.3);
 }
 .winner-card .card-initials { font-size: 16px; }
@@ -757,7 +757,7 @@ input:focus { border-color: var(--neon-blue); box-shadow: 0 0 10px rgba(0,240,25
 .card-fullscreen {
   background: linear-gradient(145deg, #111122, #0a0a18);
   border: 1px solid rgba(0,240,255,0.3);
-  border-radius: 16px;
+  border-radius: 0;
   padding: 24px 20px;
   width: 90%;
   max-width: 360px;
@@ -770,7 +770,7 @@ input:focus { border-color: var(--neon-blue); box-shadow: 0 0 10px rgba(0,240,25
   width: calc(100% + 40px);
   height: 220px;
   margin: -24px -20px 12px -20px;
-  border-radius: 16px 16px 0 0;
+  border-radius: 0;
   background: var(--avatar-color, #555);
   position: relative;
   overflow: hidden;
