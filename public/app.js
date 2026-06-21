@@ -354,29 +354,34 @@ function getInitials(name) {
   return name.replace(/[&]/g, '').split(/\s+/).map(w => w[0]).filter(Boolean).slice(0, 2).join('').toUpperCase();
 }
 
+function cardImgSrc(card) {
+  const filename = card.name.replace(/\s+/g, '_').replace(/[^a-zA-Z0-9_\-áéíóúÁÉÍÓÚñÑüÜ]/g, '');
+  return `/images/cards/${filename}.png`;
+}
+
 function cardImageHTML(card) {
   const color = CATEGORY_COLORS[card.category] || '#555';
   const initials = getInitials(card.name);
-  const imgSrc = `/images/cards/${card.id}.webp`;
-  return `<div class="card-avatar" style="--avatar-color: ${color}" data-card-id="${card.id}">
+  const src = cardImgSrc(card);
+  return `<div class="card-banner" style="--avatar-color: ${color}" data-card-id="${card.id}">
     <span class="card-initials">${initials}</span>
-    <img class="card-img" src="${imgSrc}" alt="" loading="lazy" onerror="this.style.display='none'">
+    <img class="card-banner-img" src="${src}" alt="" loading="lazy" onerror="this.style.display='none'">
   </div>`;
 }
 
 function showCardFullscreen(card) {
   const color = CATEGORY_COLORS[card.category] || '#555';
   const initials = getInitials(card.name);
-  const imgSrc = `/images/cards/${card.id}.webp`;
   const allStats = Object.keys(ALL_CATEGORY_LABELS);
 
+  const src = cardImgSrc(card);
   const overlay = document.createElement('div');
   overlay.className = 'card-fullscreen-overlay';
   overlay.innerHTML = `
     <div class="card-fullscreen">
-      <div class="card-fs-avatar" style="--avatar-color: ${color}">
+      <div class="card-fs-banner" style="--avatar-color: ${color}">
         <span class="card-initials">${initials}</span>
-        <img class="card-img" src="${imgSrc}" alt="" loading="lazy" onerror="this.style.display='none'">
+        <img class="card-banner-img" src="${src}" alt="" loading="lazy" onerror="this.style.display='none'">
       </div>
       <div class="card-fs-name">${card.name}</div>
       <div class="card-fs-cat">${card.category}</div>
@@ -428,7 +433,7 @@ function renderCards() {
       </div>`}
     `;
 
-    const avatar = div.querySelector('.card-avatar');
+    const avatar = div.querySelector('.card-banner');
     if (avatar) {
       avatar.addEventListener('click', (e) => {
         e.stopPropagation();
@@ -521,7 +526,7 @@ function renderDraftCards() {
         `).join('')}
       </div>
     `;
-    const avatar = div.querySelector('.card-avatar');
+    const avatar = div.querySelector('.card-banner');
     if (avatar) {
       avatar.addEventListener('click', (e) => {
         e.stopPropagation();
@@ -633,7 +638,7 @@ function renderViewingCards(cards, targetId) {
       <div class="card-name">${card.name}</div>
       <div class="card-cat">${card.category}</div>
     `;
-    const avatar = div.querySelector('.card-avatar');
+    const avatar = div.querySelector('.card-banner');
     if (avatar) {
       avatar.addEventListener('click', (e) => {
         e.stopPropagation();
@@ -969,7 +974,7 @@ socket.on('game-over', (data) => {
         ${cardImageHTML(card)}
         <div class="card-name">${card.name}</div>
       `;
-      div.querySelector('.card-avatar').addEventListener('click', () => showCardFullscreen(card));
+      div.querySelector('.card-banner').addEventListener('click', () => showCardFullscreen(card));
       container.appendChild(div);
     });
   }
