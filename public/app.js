@@ -426,10 +426,10 @@ function showCategoryReveal(onComplete) {
       el.classList.remove('cat-reveal-visible');
       el.classList.add('cat-reveal-exit');
       setTimeout(() => { i++; showNext(); }, 300);
-    }, 1200);
+    }, 600);
   }
 
-  setTimeout(showNext, 400);
+  setTimeout(showNext, 200);
 }
 
 function showDraftScreen() {
