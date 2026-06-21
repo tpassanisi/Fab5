@@ -358,10 +358,50 @@ function cardImageHTML(card) {
   const color = CATEGORY_COLORS[card.category] || '#555';
   const initials = getInitials(card.name);
   const imgSrc = `/images/cards/${card.id}.webp`;
-  return `<div class="card-avatar" style="--avatar-color: ${color}">
+  return `<div class="card-avatar" style="--avatar-color: ${color}" data-card-id="${card.id}">
     <span class="card-initials">${initials}</span>
     <img class="card-img" src="${imgSrc}" alt="" loading="lazy" onerror="this.style.display='none'">
   </div>`;
+}
+
+function showCardFullscreen(card) {
+  const color = CATEGORY_COLORS[card.category] || '#555';
+  const initials = getInitials(card.name);
+  const imgSrc = `/images/cards/${card.id}.webp`;
+  const allStats = Object.keys(ALL_CATEGORY_LABELS);
+
+  const overlay = document.createElement('div');
+  overlay.className = 'card-fullscreen-overlay';
+  overlay.innerHTML = `
+    <div class="card-fullscreen">
+      <div class="card-fs-avatar" style="--avatar-color: ${color}">
+        <span class="card-initials">${initials}</span>
+        <img class="card-img" src="${imgSrc}" alt="" loading="lazy" onerror="this.style.display='none'">
+      </div>
+      <div class="card-fs-name">${card.name}</div>
+      <div class="card-fs-cat">${card.category}</div>
+      <div class="card-fs-stats">
+        ${allStats.map(k => {
+          const isActive = activeCategories.includes(k);
+          return `<div class="card-fs-stat${isActive ? '' : ' inactive'}">
+            <span class="card-fs-stat-label">${ALL_CATEGORY_FULL[k]}</span>
+            <span class="card-fs-stat-val">${card[k]}</span>
+          </div>`;
+        }).join('')}
+      </div>
+      <button class="btn btn-secondary card-fs-close">Close</button>
+    </div>
+  `;
+
+  overlay.addEventListener('click', (e) => {
+    if (e.target === overlay || e.target.classList.contains('card-fs-close')) {
+      overlay.classList.add('card-fs-exit');
+      setTimeout(() => overlay.remove(), 200);
+    }
+  });
+
+  document.body.appendChild(overlay);
+  requestAnimationFrame(() => overlay.classList.add('card-fs-enter'));
 }
 
 function renderCards() {
@@ -388,6 +428,13 @@ function renderCards() {
       </div>`}
     `;
 
+    const avatar = div.querySelector('.card-avatar');
+    if (avatar) {
+      avatar.addEventListener('click', (e) => {
+        e.stopPropagation();
+        showCardFullscreen(card);
+      });
+    }
     div.addEventListener('click', () => onCardTap(i));
     container.appendChild(div);
   });
@@ -474,6 +521,13 @@ function renderDraftCards() {
         `).join('')}
       </div>
     `;
+    const avatar = div.querySelector('.card-avatar');
+    if (avatar) {
+      avatar.addEventListener('click', (e) => {
+        e.stopPropagation();
+        showCardFullscreen(card);
+      });
+    }
     div.addEventListener('click', () => {
       if (currentPhase !== 'drafting') return;
       draftSelectedIdx = i;
@@ -579,6 +633,13 @@ function renderViewingCards(cards, targetId) {
       <div class="card-name">${card.name}</div>
       <div class="card-cat">${card.category}</div>
     `;
+    const avatar = div.querySelector('.card-avatar');
+    if (avatar) {
+      avatar.addEventListener('click', (e) => {
+        e.stopPropagation();
+        showCardFullscreen(card);
+      });
+    }
     container.appendChild(div);
   });
 }
