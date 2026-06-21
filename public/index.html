@@ -1,0 +1,76 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=no">
+  <title>Fab 5</title>
+  <link rel="stylesheet" href="style.css">
+</head>
+<body>
+  <!-- HOME SCREEN -->
+  <div id="screen-home" class="screen active">
+    <div class="home-content">
+      <h1 class="game-title">FAB<br>5</h1>
+      <p class="tagline">Who's the greatest?</p>
+      <input type="text" id="player-name" placeholder="Your Name" maxlength="12" autocomplete="off">
+      <button id="btn-create" class="btn btn-primary">Create Game</button>
+      <button id="btn-solo" class="btn btn-solo">Play vs Computer</button>
+      <div class="divider"><span>or</span></div>
+      <input type="text" id="join-code" placeholder="Game Code" maxlength="4" autocomplete="off" style="text-transform:uppercase">
+      <button id="btn-join" class="btn btn-secondary">Join Game</button>
+      <p id="home-error" class="error"></p>
+    </div>
+  </div>
+
+  <!-- LOBBY -->
+  <div id="screen-lobby" class="screen">
+    <div class="lobby-content">
+      <h2>Game Lobby</h2>
+      <div class="room-code">Code: <span id="lobby-code"></span></div>
+      <p class="lobby-hint" id="lobby-hint">Drag to set turn order (oldest first)</p>
+      <ul id="player-list" class="player-list"></ul>
+      <p class="player-count"><span id="player-count">0</span>/6 players</p>
+      <div id="mode-select" class="mode-select" style="display:none">
+        <div class="mode-label">Game Mode</div>
+        <div class="mode-buttons">
+          <button class="btn-mode active" data-mode="classic">Classic</button>
+          <button class="btn-mode" data-mode="pro">Pro</button>
+        </div>
+        <div class="mode-desc" id="mode-desc">Stats visible on all cards</div>
+      </div>
+      <button id="btn-start" class="btn btn-primary" style="display:none">Start Game</button>
+      <p id="lobby-wait" class="waiting">Waiting for host to start...</p>
+    </div>
+  </div>
+
+  <!-- GAME SCREEN -->
+  <div id="screen-game" class="screen">
+    <div class="game-header">
+      <div class="game-header-top">
+        <span class="game-code-badge" id="game-code-badge"></span>
+        <div class="turn-info" id="turn-info"></div>
+        <button class="btn-quit" id="btn-quit">✕</button>
+      </div>
+      <div class="scoreboard" id="scoreboard"></div>
+    </div>
+
+    <div class="game-area" id="game-area">
+      <!-- Dynamic content: dice, cards, matchup -->
+    </div>
+
+    <div class="your-cards" id="your-cards"></div>
+  </div>
+
+  <!-- GAME OVER -->
+  <div id="screen-gameover" class="screen">
+    <div class="gameover-content">
+      <h1 id="winner-text"></h1>
+      <p class="play-again-text">Thanks for playing!</p>
+      <button id="btn-home" class="btn btn-primary">Back to Home</button>
+    </div>
+  </div>
+
+  <script src="/socket.io/socket.io.js"></script>
+  <script src="app.js"></script>
+</body>
+</html>

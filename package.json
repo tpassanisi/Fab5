@@ -1,0 +1,14 @@
+{
+  "name": "fab5",
+  "version": "1.0.0",
+  "description": "Fab 5 - Famous Men card battle game",
+  "main": "server.js",
+  "scripts": {
+    "start": "node server.js",
+    "dev": "node server.js"
+  },
+  "dependencies": {
+    "express": "^4.18.2",
+    "socket.io": "^4.7.4"
+  }
+}

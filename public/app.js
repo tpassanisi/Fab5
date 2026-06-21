@@ -1,0 +1,905 @@
+const socket = io();
+
+let myId = null;
+let myCards = [];
+let isHost = false;
+let gameCode = null;
+let players = [];
+let currentPhase = null;
+let selectedCardIdx = null;
+let pendingNextTurn = null;
+let viewingPlayerId = null;
+let highlightPlayerIds = [];
+let gameMode = 'classic';
+
+const $ = (sel) => document.querySelector(sel);
+const $$ = (sel) => document.querySelectorAll(sel);
+
+// Attempt rejoin on load
+(function tryRejoin() {
+  const savedCode = localStorage.getItem('fab5_code');
+  const savedId = localStorage.getItem('fab5_playerId');
+  if (!savedCode || !savedId) return;
+
+  socket.emit('rejoin-game', { code: savedCode, playerId: savedId }, (res) => {
+    if (res.success) {
+      myId = res.playerId;
+      gameCode = res.code;
+      if (res.phase === 'lobby') {
+        showScreen('lobby');
+        $('#lobby-code').textContent = res.code;
+      }
+    } else {
+      localStorage.removeItem('fab5_code');
+      localStorage.removeItem('fab5_playerId');
+    }
+  });
+})();
+
+const ALL_CATEGORY_LABELS = {
+  strength: 'STR', intelligence: 'INT', looks: 'LKS',
+  impact: 'IMP', talent: 'TLT', class: 'CLS',
+  humor: 'HMR', stability: 'STB', confidence: 'CNF',
+  luck: 'LCK', wealth: 'WLT', style: 'STY',
+};
+const ALL_CATEGORY_FULL = {
+  strength: 'Strength', intelligence: 'Intelligence', looks: 'Looks',
+  impact: 'Impact', talent: 'Talent', class: 'Class',
+  humor: 'Sense of Humor', stability: 'Mental Stability', confidence: 'Confidence',
+  luck: 'Luck', wealth: 'Wealth', style: 'Style',
+};
+let CATEGORY_LABELS = {};
+let CATEGORY_FULL = {};
+let activeCategories = [];
+let allCategories = [];
+
+function showScreen(id) {
+  $$('.screen').forEach(s => s.classList.remove('active'));
+  $(`#screen-${id}`).classList.add('active');
+}
+
+// Restore saved name
+const savedName = document.cookie.match(/fab5_name=([^;]+)/);
+if (savedName) $('#player-name').value = decodeURIComponent(savedName[1]);
+
+function saveName(name) {
+  document.cookie = `fab5_name=${encodeURIComponent(name)};max-age=${60*60*24*365};path=/`;
+}
+
+// HOME
+$('#btn-create').addEventListener('click', () => {
+  const name = $('#player-name').value.trim();
+  if (!name) { $('#home-error').textContent = 'Enter your name'; return; }
+  saveName(name);
+  socket.emit('create-game', name, (res) => {
+    if (res.success) {
+      myId = res.playerId;
+      gameCode = res.code;
+      isHost = true;
+      localStorage.setItem('fab5_code', res.code);
+      localStorage.setItem('fab5_playerId', res.playerId);
+      showScreen('lobby');
+      $('#lobby-code').textContent = res.code;
+      socket.emit('request-lobby');
+    }
+  });
+});
+
+$('#btn-solo').addEventListener('click', () => {
+  const name = $('#player-name').value.trim();
+  if (!name) { $('#home-error').textContent = 'Enter your name'; return; }
+  saveName(name);
+  socket.emit('create-solo-game', name, (res) => {
+    if (res.success) {
+      myId = res.playerId;
+      gameCode = res.code;
+      isHost = true;
+      localStorage.setItem('fab5_code', res.code);
+      localStorage.setItem('fab5_playerId', res.playerId);
+      showSoloModeSelect();
+    }
+  });
+});
+
+function showSoloModeSelect() {
+  showScreen('lobby');
+  const content = document.querySelector('.lobby-content');
+  content.innerHTML = `
+    <h2>Select Mode</h2>
+    <div class="mode-select" style="margin: 20px 0">
+      <div class="mode-buttons">
+        <button class="btn-mode active" data-mode="classic" id="solo-classic">Classic</button>
+        <button class="btn-mode" data-mode="pro" id="solo-pro">Pro</button>
+      </div>
+      <div class="mode-desc" id="solo-mode-desc">Stats visible on all cards</div>
+    </div>
+    <button class="btn btn-primary" id="btn-solo-start">Start Game</button>
+  `;
+
+  let soloMode = 'classic';
+  document.querySelectorAll('.btn-mode').forEach(btn => {
+    btn.addEventListener('click', () => {
+      soloMode = btn.dataset.mode;
+      document.querySelectorAll('.btn-mode').forEach(b => b.classList.remove('active'));
+      btn.classList.add('active');
+      $('#solo-mode-desc').textContent = MODE_DESCS[soloMode];
+    });
+  });
+
+  $('#btn-solo-start').addEventListener('click', () => {
+    socket.emit('start-solo-game', soloMode);
+  });
+}
+
+$('#btn-join').addEventListener('click', () => {
+  const name = $('#player-name').value.trim();
+  const code = $('#join-code').value.trim().toUpperCase();
+  if (!name) { $('#home-error').textContent = 'Enter your name'; return; }
+  if (!code) { $('#home-error').textContent = 'Enter a game code'; return; }
+  saveName(name);
+  socket.emit('join-game', code, name, (res) => {
+    if (res.success) {
+      myId = res.playerId;
+      gameCode = res.code;
+      isHost = false;
+      localStorage.setItem('fab5_code', res.code);
+      localStorage.setItem('fab5_playerId', res.playerId);
+      showScreen('lobby');
+      $('#lobby-code').textContent = res.code;
+    } else {
+      $('#home-error').textContent = res.error;
+    }
+  });
+});
+
+// LOBBY
+socket.on('lobby-update', (data) => {
+  players = data.players;
+  isHost = data.hostId === myId;
+  renderLobby();
+});
+
+function renderLobby() {
+  const list = $('#player-list');
+  list.innerHTML = '';
+  players.forEach((p, i) => {
+    const li = document.createElement('li');
+    li.className = 'player-item';
+    li.dataset.id = p.id;
+    li.innerHTML = `
+      ${isHost ? '<span class="drag-handle">☰</span>' : ''}
+      <span class="player-number">${i + 1}</span>
+      <span>${p.name}${p.id === myId ? ' (you)' : ''}</span>
+    `;
+    list.appendChild(li);
+  });
+
+  $('#player-count').textContent = players.length;
+
+  if (isHost) {
+    $('#btn-start').style.display = players.length >= 2 ? 'block' : 'none';
+    $('#lobby-wait').style.display = 'none';
+    $('#lobby-hint').style.display = '';
+    $('#mode-select').style.display = '';
+    setupDragReorder();
+    setupModeSelect();
+  } else {
+    $('#btn-start').style.display = 'none';
+    $('#lobby-wait').style.display = '';
+    $('#lobby-hint').style.display = 'none';
+    $('#mode-select').style.display = 'none';
+  }
+}
+
+// Touch drag reorder
+function setupDragReorder() {
+  const list = $('#player-list');
+  let dragItem = null;
+  let dragY = 0;
+  let placeholder = null;
+
+  list.querySelectorAll('.drag-handle').forEach(handle => {
+    handle.addEventListener('touchstart', (e) => {
+      e.preventDefault();
+      dragItem = handle.closest('.player-item');
+      dragY = e.touches[0].clientY;
+      dragItem.classList.add('dragging');
+
+      placeholder = document.createElement('li');
+      placeholder.className = 'player-item';
+      placeholder.style.border = '2px dashed var(--accent)';
+      placeholder.style.opacity = '0.3';
+      placeholder.style.height = dragItem.offsetHeight + 'px';
+      dragItem.parentNode.insertBefore(placeholder, dragItem.nextSibling);
+    });
+  });
+
+  document.addEventListener('touchmove', (e) => {
+    if (!dragItem) return;
+    e.preventDefault();
+    const y = e.touches[0].clientY;
+    const items = [...list.querySelectorAll('.player-item:not(.dragging)')];
+    const target = items.find(item => {
+      const rect = item.getBoundingClientRect();
+      return y > rect.top && y < rect.bottom;
+    });
+    if (target && target !== placeholder) {
+      const rect = target.getBoundingClientRect();
+      if (y < rect.top + rect.height / 2) {
+        list.insertBefore(placeholder, target);
+      } else {
+        list.insertBefore(placeholder, target.nextSibling);
+      }
+    }
+  }, { passive: false });
+
+  document.addEventListener('touchend', () => {
+    if (!dragItem) return;
+    dragItem.classList.remove('dragging');
+    if (placeholder && placeholder.parentNode) {
+      placeholder.parentNode.insertBefore(dragItem, placeholder);
+      placeholder.remove();
+    }
+    dragItem = null;
+    placeholder = null;
+
+    const newOrder = [...list.querySelectorAll('.player-item')].map(li => li.dataset.id);
+    socket.emit('reorder-players', newOrder);
+  });
+}
+
+const MODE_DESCS = {
+  classic: 'Stats visible on all cards',
+  pro: 'Stats hidden — play from memory!',
+};
+
+function setupModeSelect() {
+  document.querySelectorAll('.btn-mode').forEach(btn => {
+    btn.addEventListener('click', () => {
+      const mode = btn.dataset.mode;
+      document.querySelectorAll('.btn-mode').forEach(b => b.classList.remove('active'));
+      btn.classList.add('active');
+      $('#mode-desc').textContent = MODE_DESCS[mode];
+      socket.emit('set-mode', mode);
+    });
+  });
+}
+
+socket.on('mode-update', (data) => {
+  const modeDesc = $('#mode-desc');
+  if (modeDesc) modeDesc.textContent = MODE_DESCS[data.mode];
+  document.querySelectorAll('.btn-mode').forEach(b => {
+    b.classList.toggle('active', b.dataset.mode === data.mode);
+  });
+});
+
+$('#btn-start').addEventListener('click', () => {
+  socket.emit('start-game');
+});
+
+// GAME
+socket.on('game-started', (data) => {
+  myId = data.yourId;
+  myCards = data.yourCards;
+  players = data.players;
+  currentPhase = data.phase;
+  if (data.mode) gameMode = data.mode;
+
+  if (data.activeCategories) {
+    activeCategories = data.activeCategories;
+    allCategories = data.allCategories || Object.keys(ALL_CATEGORY_LABELS);
+    CATEGORY_LABELS = {};
+    CATEGORY_FULL = {};
+    activeCategories.forEach(k => {
+      CATEGORY_LABELS[k] = ALL_CATEGORY_LABELS[k];
+      CATEGORY_FULL[k] = ALL_CATEGORY_FULL[k];
+    });
+  }
+
+  showScreen('game');
+  const codeBadge = $('#game-code-badge');
+  if (codeBadge && gameCode) codeBadge.textContent = gameCode;
+  renderCards();
+  renderScoreboard();
+  updateTurnInfo(data.currentTurnPlayerId);
+
+  if (data.phase === 'drafting') {
+    if (data.hasDiscarded) {
+      showMessage('Waiting for other players to discard...');
+    } else {
+      showCategoryReveal(() => showDraftScreen());
+    }
+  } else if (data.phase === 'selecting-cards') {
+    // handled by category-rolled event that follows on rejoin
+  } else if (data.phase === 'round-result') {
+    showMessage('Waiting for next round...');
+  } else if (data.phase === 'rolling-category' && data.opponentId) {
+    highlightPlayerIds = [
+      { id: data.currentTurnPlayerId, role: 'attacker' },
+      { id: data.opponentId, role: 'defender' },
+    ];
+    renderScoreboard();
+    const attackerName = players.find(p => p.id === data.currentTurnPlayerId)?.name;
+    const defenderName = data.opponentName || players.find(p => p.id === data.opponentId)?.name;
+    if (data.currentTurnPlayerId === myId) {
+      showMatchupBanner(attackerName, defenderName, 'You are challenging');
+      setTimeout(() => showDiceRoll('category'), 1500);
+    } else {
+      showMatchupBanner(attackerName, defenderName);
+      setTimeout(() => showMessage(`${attackerName} is rolling for category...`), 1500);
+    }
+  } else if (data.phase === 'rolling-category') {
+    if (data.currentTurnPlayerId === myId) {
+      showDiceRoll('category');
+    } else {
+      const name = players.find(p => p.id === data.currentTurnPlayerId)?.name;
+      showMessage(`${name} is rolling for category...`);
+    }
+  } else {
+    if (data.currentTurnPlayerId === myId) {
+      showDiceRoll('opponent');
+    } else {
+      const name = players.find(p => p.id === data.currentTurnPlayerId)?.name;
+      showMessage(`${name} is rolling for opponent...`);
+    }
+  }
+});
+
+const CATEGORY_COLORS = {
+  Sports: '#e74c3c', Science: '#3498db', Acting: '#9b59b6',
+  Music: '#e67e22', Leaders: '#2ecc71', Culture: '#1abc9c', Infamous: '#7f8c8d',
+};
+
+function getInitials(name) {
+  return name.replace(/[&]/g, '').split(/\s+/).map(w => w[0]).filter(Boolean).slice(0, 2).join('').toUpperCase();
+}
+
+function cardImageHTML(card) {
+  const color = CATEGORY_COLORS[card.category] || '#555';
+  const initials = getInitials(card.name);
+  const imgSrc = `/images/cards/${card.id}.webp`;
+  return `<div class="card-avatar" style="--avatar-color: ${color}">
+    <span class="card-initials">${initials}</span>
+    <img class="card-img" src="${imgSrc}" alt="" loading="lazy" onerror="this.style.display='none'">
+  </div>`;
+}
+
+function renderCards() {
+  const container = $('#your-cards');
+  container.innerHTML = '';
+  myCards.forEach((card, i) => {
+    const div = document.createElement('div');
+    div.className = `card${card.flipped ? ' flipped' : ''}`;
+    div.dataset.index = i;
+
+    const highlightCat = !card.flipped && currentPhase === 'selecting-cards' ? window.currentCategory : null;
+    const hideStats = gameMode === 'pro' && currentPhase !== 'drafting';
+    div.innerHTML = `
+      ${cardImageHTML(card)}
+      <div class="card-name">${card.name}</div>
+      <div class="card-cat">${card.category}</div>
+      ${hideStats ? '<div class="card-stats-hidden">PRO</div>' : `<div class="card-stats">
+        ${Object.keys(CATEGORY_LABELS).map(k => `
+          <div class="stat${k === highlightCat ? ' highlight' : ''}">
+            <span>${CATEGORY_LABELS[k]}</span>
+            <span class="stat-val">${card[k]}</span>
+          </div>
+        `).join('')}
+      </div>`}
+    `;
+
+    div.addEventListener('click', () => onCardTap(i));
+    container.appendChild(div);
+  });
+}
+
+let draftSelectedIdx = null;
+
+function showCategoryReveal(onComplete) {
+  const eliminated = allCategories.filter(k => !activeCategories.includes(k));
+  const container = $('#your-cards');
+  container.innerHTML = '';
+
+  const gameArea = $('#game-area');
+  gameArea.classList.add('expanded');
+  gameArea.innerHTML = `
+    <div class="draft-prompt">
+      <div class="draft-title">Selecting Categories...</div>
+      <div class="draft-sub">6 of 12 will be eliminated</div>
+    </div>
+  `;
+
+  const grid = document.createElement('div');
+  grid.className = 'category-reveal-grid';
+  allCategories.forEach(k => {
+    const chip = document.createElement('div');
+    chip.className = 'cat-chip';
+    chip.dataset.key = k;
+    chip.textContent = ALL_CATEGORY_FULL[k];
+    grid.appendChild(chip);
+  });
+  gameArea.appendChild(grid);
+
+  let delay = 800;
+  eliminated.forEach((k, i) => {
+    setTimeout(() => {
+      const chip = grid.querySelector(`[data-key="${k}"]`);
+      if (chip) chip.classList.add('eliminated');
+    }, delay + i * 600);
+  });
+
+  setTimeout(() => {
+    const title = document.querySelector('.draft-title');
+    if (title) title.textContent = 'Categories Selected!';
+    const sub = document.querySelector('.draft-sub');
+    if (sub) sub.textContent = '6 active categories for this game';
+  }, delay + eliminated.length * 600);
+
+  setTimeout(() => {
+    gameArea.classList.remove('expanded');
+    onComplete();
+  }, delay + eliminated.length * 600 + 1200);
+}
+
+function showDraftScreen() {
+  $('#game-area').classList.remove('expanded');
+  $('#game-area').innerHTML = `
+    <div class="draft-prompt">
+      <div class="draft-title">Choose a card to remove</div>
+      <div class="draft-sub">You have 6 cards — discard 1 to start with 5</div>
+    </div>
+    <button class="btn btn-primary btn-draft-confirm" id="btn-draft-confirm" style="display:none">Remove Card</button>
+  `;
+
+  draftSelectedIdx = null;
+  renderDraftCards();
+
+  $('#btn-draft-confirm').addEventListener('click', () => {
+    if (draftSelectedIdx === null) return;
+    socket.emit('discard-card', draftSelectedIdx);
+    $('#btn-draft-confirm').style.display = 'none';
+    $('#game-area').innerHTML = `<div class="game-message">Waiting for other players...</div>`;
+    draftSelectedIdx = null;
+  });
+}
+
+function renderDraftCards() {
+  const container = $('#your-cards');
+  container.innerHTML = '';
+  myCards.forEach((card, i) => {
+    const div = document.createElement('div');
+    div.className = `card${i === draftSelectedIdx ? ' draft-selected' : ''}`;
+    div.dataset.index = i;
+    div.innerHTML = `
+      ${cardImageHTML(card)}
+      <div class="card-name">${card.name}</div>
+      <div class="card-cat">${card.category}</div>
+      <div class="card-stats">
+        ${Object.keys(CATEGORY_LABELS).map(k => `
+          <div class="stat">
+            <span>${CATEGORY_LABELS[k]}</span>
+            <span class="stat-val">${card[k]}</span>
+          </div>
+        `).join('')}
+      </div>
+    `;
+    div.addEventListener('click', () => {
+      if (currentPhase !== 'drafting') return;
+      draftSelectedIdx = i;
+      renderDraftCards();
+      const btn = $('#btn-draft-confirm');
+      if (btn) btn.style.display = 'block';
+    });
+    container.appendChild(div);
+  });
+}
+
+socket.on('player-discarded', (data) => {
+  const existing = document.querySelector('.game-message');
+  if (existing && currentPhase === 'drafting') {
+    existing.innerHTML += `<br>${data.playerName} is ready.`;
+  }
+});
+
+socket.on('draft-complete', (data) => {
+  currentPhase = data.phase;
+  players = data.players;
+  renderCards();
+  renderScoreboard();
+  updateTurnInfo(data.currentTurnPlayerId);
+
+  if (data.phase === 'rolling-category' && data.opponentId) {
+    highlightPlayerIds = [
+      { id: data.currentTurnPlayerId, role: 'attacker' },
+      { id: data.opponentId, role: 'defender' },
+    ];
+    renderScoreboard();
+    const attackerName = players.find(p => p.id === data.currentTurnPlayerId)?.name;
+    const defenderName = data.opponentName || players.find(p => p.id === data.opponentId)?.name;
+    if (data.currentTurnPlayerId === myId) {
+      showMatchupBanner(attackerName, defenderName, 'You are challenging');
+      setTimeout(() => showDiceRoll('category'), 1500);
+    } else if (data.opponentId === myId) {
+      showMatchupBanner(attackerName, defenderName, 'You are being challenged');
+      setTimeout(() => showMessage('Waiting for category roll...'), 1500);
+    } else {
+      showMatchupBanner(attackerName, defenderName);
+      setTimeout(() => showMessage(`${attackerName} is rolling for category...`), 1500);
+    }
+  } else if (data.currentTurnPlayerId === myId) {
+    showDiceRoll('opponent');
+  } else {
+    const name = players.find(p => p.id === data.currentTurnPlayerId)?.name;
+    showMessage(`${name} is rolling for opponent...`);
+  }
+});
+
+function renderScoreboard() {
+  const sb = $('#scoreboard');
+  sb.innerHTML = '';
+  players.forEach(p => {
+    const active = p.activeCards !== undefined ? p.activeCards :
+      (p.id === myId ? myCards.filter(c => !c.flipped).length : '?');
+    const eliminated = active === 0;
+    const chip = document.createElement('span');
+    const isViewing = viewingPlayerId === p.id;
+    const hlType = highlightPlayerIds.find(h => h.id === p.id);
+    chip.className = `score-chip${p.id === myId ? ' you' : ''}${eliminated ? ' eliminated' : ''}${isViewing ? ' viewing' : ''}${hlType ? ` hl-${hlType.role}` : ''}`;
+    chip.textContent = `${p.name}: ${active}`;
+    chip.addEventListener('click', () => onScoreChipTap(p.id));
+    sb.appendChild(chip);
+  });
+}
+
+function onScoreChipTap(targetId) {
+  if (targetId === myId || viewingPlayerId === targetId) {
+    viewingPlayerId = null;
+    renderCards();
+    renderScoreboard();
+    return;
+  }
+  socket.emit('view-cards', targetId, (res) => {
+    if (!res || !res.cards) return;
+    viewingPlayerId = targetId;
+    renderViewingCards(res.cards, targetId);
+    renderScoreboard();
+  });
+}
+
+function renderViewingCards(cards, targetId) {
+  const container = $('#your-cards');
+  container.innerHTML = '';
+  const targetName = players.find(p => p.id === targetId)?.name || '?';
+  const header = document.createElement('div');
+  header.className = 'viewing-header';
+  header.innerHTML = `Viewing <strong>${targetName}</strong>'s cards <span class="viewing-close">✕</span>`;
+  header.querySelector('.viewing-close').addEventListener('click', () => {
+    viewingPlayerId = null;
+    renderCards();
+    renderScoreboard();
+  });
+  container.appendChild(header);
+
+  cards.forEach(card => {
+    const div = document.createElement('div');
+    div.className = `card card-preview${card.flipped ? ' flipped' : ''}`;
+    div.innerHTML = `
+      ${cardImageHTML(card)}
+      <div class="card-name">${card.name}</div>
+      <div class="card-cat">${card.category}</div>
+    `;
+    container.appendChild(div);
+  });
+}
+
+function updateTurnInfo(turnPlayerId) {
+  const name = turnPlayerId === myId ? 'Your turn' :
+    `${players.find(p => p.id === turnPlayerId)?.name}'s turn`;
+  $('#turn-info').textContent = name;
+}
+
+function showMessage(msg) {
+  $('#game-area').innerHTML = `<div class="game-message">${msg}</div>`;
+}
+
+function showDiceRoll(type) {
+  const label = type === 'opponent' ? 'Tap to roll for opponent' : 'Tap to roll for category';
+  $('#game-area').innerHTML = `
+    <div class="dice-container">
+      <div class="dice" id="dice">?</div>
+      <div class="dice-label">${label}</div>
+    </div>
+  `;
+  $('#dice').addEventListener('click', () => {
+    const dice = $('#dice');
+    if (dice.classList.contains('rolling')) return;
+    dice.classList.add('rolling');
+    const rollInterval = setInterval(() => {
+      dice.textContent = Math.floor(Math.random() * 6) + 1;
+    }, 80);
+    dice.dataset.rollInterval = rollInterval;
+    setTimeout(() => {
+      if (type === 'opponent') {
+        socket.emit('roll-opponent');
+      } else {
+        socket.emit('roll-category');
+      }
+    }, 600);
+  });
+}
+
+socket.on('opponent-rolled', (data) => {
+  const dice = $('#dice');
+  if (dice) {
+    clearInterval(Number(dice.dataset.rollInterval));
+    dice.classList.remove('rolling');
+    dice.textContent = data.roll;
+  }
+  currentPhase = data.phase;
+
+  const attackerName = players.find(p => p.id === data.attackerId)?.name;
+  highlightPlayerIds = [
+    { id: data.attackerId, role: 'attacker' },
+    { id: data.opponentId, role: 'defender' },
+  ];
+  renderScoreboard();
+
+  setTimeout(() => {
+    if (data.attackerId === myId) {
+      showMatchupBanner(attackerName, data.opponentName, 'You are challenging');
+      setTimeout(() => showDiceRoll('category'), 1500);
+    } else if (data.opponentId === myId) {
+      showMatchupBanner(attackerName, data.opponentName, 'You are being challenged');
+      setTimeout(() => showMessage('Waiting for category roll...'), 1500);
+    } else {
+      showMatchupBanner(attackerName, data.opponentName);
+      setTimeout(() => showMessage(`${attackerName} is rolling for category...`), 1500);
+    }
+  }, 800);
+});
+
+function showMatchupBanner(attackerName, defenderName, subtitle) {
+  $('#game-area').innerHTML = `
+    <div class="matchup-banner">
+      <div class="matchup-banner-names">
+        <span class="mb-attacker">${attackerName}</span>
+        <span class="mb-vs">VS</span>
+        <span class="mb-defender">${defenderName}</span>
+      </div>
+      ${subtitle ? `<div class="mb-subtitle">${subtitle}</div>` : ''}
+    </div>
+  `;
+}
+
+socket.on('category-rolled', (data) => {
+  currentPhase = data.phase;
+  window.currentCategory = data.category;
+  window.currentAttackerId = data.attackerId;
+  window.currentDefenderId = data.defenderId;
+  selectedCardIdx = null;
+  highlightPlayerIds = [
+    { id: data.attackerId, role: 'attacker' },
+    { id: data.defenderId, role: 'defender' },
+  ];
+  renderScoreboard();
+
+  const dice = $('#dice');
+  if (dice) {
+    clearInterval(Number(dice.dataset.rollInterval));
+    dice.classList.remove('rolling');
+    dice.textContent = data.roll;
+  }
+
+  setTimeout(() => {
+    const isInvolved = myId === data.attackerId || myId === data.defenderId;
+    if (isInvolved) {
+      showCardSelection(data);
+    } else {
+      const aName = players.find(p => p.id === data.attackerId)?.name;
+      const dName = players.find(p => p.id === data.defenderId)?.name;
+      showMessage(`Category: <strong>${data.categoryLabel}</strong><br>${aName} vs ${dName}<br>Both players choosing cards...`);
+    }
+    renderCards();
+  }, 1000);
+});
+
+function showCardSelection(data) {
+  const opponent = myId === data.attackerId ?
+    players.find(p => p.id === data.defenderId)?.name :
+    players.find(p => p.id === data.attackerId)?.name;
+
+  $('#game-area').innerHTML = `
+    <div class="result-banner">
+      <div class="result-text" style="color: var(--gold);">${data.categoryLabel}</div>
+      <div class="result-sub">vs ${opponent} — pick your card!</div>
+    </div>
+    <button class="btn-confirm-card" id="btn-confirm" style="display:none">Lock In Card</button>
+  `;
+
+  document.querySelectorAll('.card:not(.flipped)').forEach(c => c.classList.add('selectable'));
+
+  $('#btn-confirm').addEventListener('click', () => {
+    if (selectedCardIdx !== null) {
+      socket.emit('select-card', selectedCardIdx);
+      document.querySelectorAll('.card').forEach(c => {
+        c.classList.remove('selectable');
+        c.style.pointerEvents = 'none';
+      });
+      $('#btn-confirm').style.display = 'none';
+      $('#game-area').innerHTML += '<div class="game-message">Waiting for opponent...</div>';
+    }
+  });
+}
+
+function onCardTap(index) {
+  if (currentPhase !== 'selecting-cards') return;
+  if (myId !== window.currentAttackerId && myId !== window.currentDefenderId) return;
+  if (myCards[index].flipped) return;
+
+  selectedCardIdx = index;
+  document.querySelectorAll('.card').forEach((c, i) => {
+    c.classList.toggle('selected', i === index);
+  });
+
+  const btn = $('#btn-confirm');
+  if (btn) btn.style.display = 'block';
+}
+
+socket.on('card-selected', (data) => {
+  if (currentPhase !== 'selecting-cards') return;
+  const isInvolved = myId === window.currentAttackerId || myId === window.currentDefenderId;
+  if (!isInvolved) {
+    const existingMsg = document.querySelector('.game-message');
+    if (existingMsg) {
+      existingMsg.innerHTML += `<br>${data.playerName} chose a card.`;
+    }
+  }
+});
+
+socket.on('round-result', (data) => {
+  currentPhase = data.phase;
+  window.currentCategory = null;
+
+  const aCard = data.attackerCard;
+  const dCard = data.defenderCard;
+  const cat = data.category;
+  const isWinner = data.winnerId === myId;
+  const isLoser = data.loserId === myId;
+
+  const attackerWins = data.winnerId !== data.loserId &&
+    data.winnerId === (window.currentAttackerId || data.winnerId);
+
+  pendingNextTurn = null;
+
+  $('#game-area').innerHTML = `
+    <div class="result-banner">
+      <div class="result-text ${isWinner ? 'win' : isLoser ? 'lose' : ''}">${data.categoryLabel}: ${CATEGORY_FULL[cat]}</div>
+      <div class="result-sub">${data.winnerName} wins!</div>
+    </div>
+    <div class="matchup">
+      <div class="matchup-card ${aCard[cat] > dCard[cat] ? 'winner' : 'loser'}">
+        ${cardImageHTML(aCard)}
+        <div class="card-name">${aCard.name}</div>
+        <div class="card-category-tag">${aCard.category}</div>
+        <div class="stat-label">${CATEGORY_FULL[cat]}</div>
+        <div class="stat-highlight" style="color:${aCard[cat] > dCard[cat] ? 'var(--green)' : 'var(--red)'}">${aCard[cat]}</div>
+      </div>
+      <div class="matchup-vs">VS</div>
+      <div class="matchup-card ${dCard[cat] > aCard[cat] ? 'winner' : 'loser'}">
+        ${cardImageHTML(dCard)}
+        <div class="card-name">${dCard.name}</div>
+        <div class="card-category-tag">${dCard.category}</div>
+        <div class="stat-label">${CATEGORY_FULL[cat]}</div>
+        <div class="stat-highlight" style="color:${dCard[cat] > aCard[cat] ? 'var(--green)' : 'var(--red)'}">${dCard[cat]}</div>
+      </div>
+    </div>
+    <button class="btn btn-primary btn-continue" id="btn-continue">Continue</button>
+  `;
+
+  $('#btn-continue').addEventListener('click', () => processPendingNextTurn());
+
+  selectedCardIdx = null;
+  document.querySelectorAll('.card').forEach(c => {
+    c.classList.remove('selectable', 'selected');
+    c.style.pointerEvents = '';
+  });
+});
+
+socket.on('round-tie', (data) => {
+  currentPhase = data.phase;
+
+  $('#game-area').innerHTML = `
+    <div class="result-banner">
+      <div class="result-text tie">TIE! ${data.categoryLabel}: ${data.value}</div>
+      <div class="result-sub">Same cards — rolling new category...</div>
+    </div>
+    <div class="matchup">
+      <div class="matchup-card">
+        ${cardImageHTML(data.attackerCard)}
+        <div class="card-name">${data.attackerCard.name}</div>
+        <div class="stat-highlight" style="color:var(--gold)">${data.value}</div>
+      </div>
+      <div class="matchup-vs">VS</div>
+      <div class="matchup-card">
+        ${cardImageHTML(data.defenderCard)}
+        <div class="card-name">${data.defenderCard.name}</div>
+        <div class="stat-highlight" style="color:var(--gold)">${data.value}</div>
+      </div>
+    </div>
+  `;
+
+  setTimeout(() => {
+    if (window.currentAttackerId === myId) {
+      showDiceRoll('category');
+    } else {
+      showMessage('Rolling for a new category...');
+    }
+  }, 2000);
+});
+
+socket.on('cards-update', (data) => {
+  myCards = data.yourCards;
+  if (currentPhase !== 'drafting') renderCards();
+});
+
+socket.on('next-turn', (data) => {
+  pendingNextTurn = data;
+  const btn = $('#btn-continue');
+  if (btn) btn.style.opacity = '1';
+});
+
+function processPendingNextTurn() {
+  const data = pendingNextTurn;
+  if (!data) return;
+  pendingNextTurn = null;
+  highlightPlayerIds = [];
+  socket.emit('ready-for-next');
+
+  currentPhase = data.phase;
+  players = data.players;
+  renderScoreboard();
+  updateTurnInfo(data.currentTurnPlayerId);
+
+  if (data.phase === 'rolling-category' && data.opponentId) {
+    highlightPlayerIds = [
+      { id: data.currentTurnPlayerId, role: 'attacker' },
+      { id: data.opponentId, role: 'defender' },
+    ];
+    renderScoreboard();
+    const attackerName = data.currentTurnPlayerName;
+    const defenderName = data.opponentName;
+    if (data.currentTurnPlayerId === myId) {
+      showMatchupBanner(attackerName, defenderName, 'You are challenging');
+      setTimeout(() => showDiceRoll('category'), 1500);
+    } else if (data.opponentId === myId) {
+      showMatchupBanner(attackerName, defenderName, 'You are being challenged');
+      setTimeout(() => showMessage('Waiting for category roll...'), 1500);
+    } else {
+      showMatchupBanner(attackerName, defenderName);
+      setTimeout(() => showMessage(`${attackerName} is rolling for category...`), 1500);
+    }
+  } else if (data.currentTurnPlayerId === myId) {
+    showDiceRoll('opponent');
+  } else {
+    showMessage(`${data.currentTurnPlayerName} is rolling...`);
+  }
+}
+
+socket.on('game-over', (data) => {
+  showScreen('gameover');
+  const isMe = data.winnerId === myId;
+  $('#winner-text').textContent = isMe ? 'YOU WIN!' : `${data.winnerName} Wins!`;
+});
+
+$('#btn-quit').addEventListener('click', () => {
+  if (!confirm('Leave this game?')) return;
+  localStorage.removeItem('fab5_code');
+  localStorage.removeItem('fab5_playerId');
+  location.reload();
+});
+
+$('#btn-home').addEventListener('click', () => {
+  localStorage.removeItem('fab5_code');
+  localStorage.removeItem('fab5_playerId');
+  location.reload();
+});
