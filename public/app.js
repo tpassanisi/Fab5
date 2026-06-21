@@ -645,6 +645,10 @@ function renderViewingCards(cards, targetId) {
 }
 
 function updateTurnInfo(turnPlayerId) {
+  if (!turnPlayerId) {
+    $('#turn-info').textContent = '';
+    return;
+  }
   const name = turnPlayerId === myId ? 'Your turn' :
     `${players.find(p => p.id === turnPlayerId)?.name}'s turn`;
   $('#turn-info').textContent = name;
