@@ -898,16 +898,24 @@ socket.on('cards-update', (data) => {
   if (currentPhase !== 'drafting') renderCards();
 });
 
+let continueRequested = false;
+
 socket.on('next-turn', (data) => {
   pendingNextTurn = data;
-  const btn = $('#btn-continue');
-  if (btn) btn.style.opacity = '1';
+  if (continueRequested) {
+    continueRequested = false;
+    processPendingNextTurn();
+  }
 });
 
 function processPendingNextTurn() {
+  if (!pendingNextTurn) {
+    continueRequested = true;
+    return;
+  }
   const data = pendingNextTurn;
-  if (!data) return;
   pendingNextTurn = null;
+  continueRequested = false;
   highlightPlayerIds = [];
   socket.emit('ready-for-next');
 
