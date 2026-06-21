@@ -2,12 +2,45 @@ const express = require('express');
 const http = require('http');
 const { Server } = require('socket.io');
 const cards = require('./data/cards');
+const db = require('./db');
 
 const app = express();
 const server = http.createServer(app);
 const io = new Server(server);
 
 app.use(express.static('public'));
+app.use(express.json());
+
+// Initialize database if credentials are provided
+if (process.env.DB_HOST || process.env.DB_USER) {
+  db.init({
+    host: process.env.DB_HOST || 'localhost',
+    user: process.env.DB_USER || 'root',
+    password: process.env.DB_PASS || '',
+    database: process.env.DB_NAME || 'fab5',
+  });
+}
+
+// API endpoints for stats
+app.get('/api/player/:id', async (req, res) => {
+  const stats = await db.getPlayerStats(req.params.id);
+  if (!stats) return res.status(404).json({ error: 'Player not found' });
+  res.json(stats);
+});
+
+app.get('/api/card/:id', async (req, res) => {
+  const stats = await db.getCardStats(parseInt(req.params.id));
+  if (!stats) return res.status(404).json({ error: 'Card not found' });
+  res.json(stats);
+});
+
+app.get('/api/leaderboard', async (req, res) => {
+  res.json(await db.getLeaderboard());
+});
+
+app.get('/api/top-cards', async (req, res) => {
+  res.json(await db.getTopCards());
+});
 
 const games = {};
 
@@ -220,6 +253,8 @@ function resolveRoundForGame(game) {
   }
 
   const attackerWins = aCard[cat] > dCard[cat];
+  const winnerId = attackerWins ? attacker.id : defender.id;
+  const loserId = attackerWins ? defender.id : attacker.id;
   const loser = attackerWins ? defender : attacker;
   const loserCardIdx = attackerWins ? game.defenderCard : game.attackerCard;
   loser.cards[loserCardIdx].flipped = true;
@@ -228,14 +263,25 @@ function resolveRoundForGame(game) {
 
   const active = getActivePlayers(game);
 
+  db.recordRound({
+    gameCode: roomCode,
+    attackerId: attacker.id,
+    defenderId: defender.id,
+    attackerCardId: aCard.id,
+    defenderCardId: dCard.id,
+    category: cat,
+    winnerId,
+    loserId,
+  }).catch(() => {});
+
   io.to(roomCode).emit('round-result', {
     attackerCard: aCard,
     defenderCard: dCard,
     category: cat,
     categoryLabel: getCategoryLabel(game, cat),
-    winnerId: attackerWins ? attacker.id : defender.id,
+    winnerId,
     winnerName: attackerWins ? attacker.name : defender.name,
-    loserId: loser.id,
+    loserId,
     loserName: loser.name,
     loserCardIdx,
     phase: game.phase,
@@ -251,6 +297,15 @@ function resolveRoundForGame(game) {
   if (active.length <= 1) {
     game.phase = 'gameover';
     game.winner = active[0] || null;
+
+    game.players.filter(p => !p.isBot).forEach(p => {
+      if (game.winner && p.id === game.winner.id) {
+        db.recordGameWin(p.id).catch(() => {});
+      } else {
+        db.recordGameLoss(p.id).catch(() => {});
+      }
+    });
+
     io.to(roomCode).emit('game-over', {
       winnerId: game.winner?.id,
       winnerName: game.winner?.name,
@@ -326,6 +381,7 @@ io.on('connection', (socket) => {
 
     playerId = generatePlayerId();
     socketToPlayer[socket.id] = playerId;
+    db.ensurePlayer(playerId, name).catch(() => {});
     const game = {
       code,
       hostId: playerId,
@@ -447,6 +503,7 @@ io.on('connection', (socket) => {
 
     playerId = generatePlayerId();
     socketToPlayer[socket.id] = playerId;
+    db.ensurePlayer(playerId, name).catch(() => {});
     game.players.push({ id: playerId, name, cards: [], connected: true });
     currentGame = code.toUpperCase();
     socket.join(currentGame);
@@ -652,6 +709,12 @@ io.on('connection', (socket) => {
         flipped: c.flipped,
       })),
     });
+  });
+
+  socket.on('get-my-stats', async (cb) => {
+    if (!playerId) return cb(null);
+    const stats = await db.getPlayerStats(playerId).catch(() => null);
+    cb(stats);
   });
 
   socket.on('request-lobby', () => {
