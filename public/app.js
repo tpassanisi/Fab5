@@ -612,7 +612,11 @@ function renderScoreboard() {
 function onScoreChipTap(targetId) {
   if (targetId === myId || viewingPlayerId === targetId) {
     viewingPlayerId = null;
-    renderCards();
+    if (currentPhase === 'drafting') {
+      renderDraftCards();
+    } else {
+      renderCards();
+    }
     renderScoreboard();
     return;
   }
