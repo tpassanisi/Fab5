@@ -69,7 +69,7 @@ fetch('/api/card-stats-all').then(r => r.json()).then(d => { cardWL = d; }).catc
 
 function getCardWL(cardId) {
   const s = cardWL[cardId];
-  return s ? `${s.w}-${s.l}` : '';
+  return s ? `${s.w}-${s.l}` : '0-0';
 }
 
 // Random splash image
