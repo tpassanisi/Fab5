@@ -17,8 +17,8 @@ const $$ = (sel) => document.querySelectorAll(sel);
 
 // Attempt rejoin on load
 (function tryRejoin() {
-  const savedCode = localStorage.getItem('fab5_code');
-  const savedId = localStorage.getItem('fab5_playerId');
+  const savedCode = localStorage.getItem('idolclash_code');
+  const savedId = localStorage.getItem('idolclash_playerId');
   if (!savedCode || !savedId) return;
 
   socket.emit('rejoin-game', { code: savedCode, playerId: savedId }, (res) => {
@@ -30,8 +30,8 @@ const $$ = (sel) => document.querySelectorAll(sel);
         $('#lobby-code').textContent = res.code;
       }
     } else {
-      localStorage.removeItem('fab5_code');
-      localStorage.removeItem('fab5_playerId');
+      localStorage.removeItem('idolclash_code');
+      localStorage.removeItem('idolclash_playerId');
     }
   });
 })();
@@ -63,11 +63,11 @@ const splashIdx = Math.floor(Math.random() * 5) + 1;
 $('#splash-img').src = `/images/splash_mashup/splash_${splashIdx}.png`;
 
 // Restore saved name
-const savedName = document.cookie.match(/fab5_name=([^;]+)/);
+const savedName = document.cookie.match(/idolclash_name=([^;]+)/);
 if (savedName) $('#player-name').value = decodeURIComponent(savedName[1]);
 
 function saveName(name) {
-  document.cookie = `fab5_name=${encodeURIComponent(name)};max-age=${60*60*24*365};path=/`;
+  document.cookie = `idolclash_name=${encodeURIComponent(name)};max-age=${60*60*24*365};path=/`;
 }
 
 // HOME
@@ -80,8 +80,8 @@ $('#btn-create').addEventListener('click', () => {
       myId = res.playerId;
       gameCode = res.code;
       isHost = true;
-      localStorage.setItem('fab5_code', res.code);
-      localStorage.setItem('fab5_playerId', res.playerId);
+      localStorage.setItem('idolclash_code', res.code);
+      localStorage.setItem('idolclash_playerId', res.playerId);
       showScreen('lobby');
       $('#lobby-code').textContent = res.code;
       socket.emit('request-lobby');
@@ -98,8 +98,8 @@ $('#btn-solo').addEventListener('click', () => {
       myId = res.playerId;
       gameCode = res.code;
       isHost = true;
-      localStorage.setItem('fab5_code', res.code);
-      localStorage.setItem('fab5_playerId', res.playerId);
+      localStorage.setItem('idolclash_code', res.code);
+      localStorage.setItem('idolclash_playerId', res.playerId);
       showSoloModeSelect();
     }
   });
@@ -146,8 +146,8 @@ $('#btn-join').addEventListener('click', () => {
       myId = res.playerId;
       gameCode = res.code;
       isHost = false;
-      localStorage.setItem('fab5_code', res.code);
-      localStorage.setItem('fab5_playerId', res.playerId);
+      localStorage.setItem('idolclash_code', res.code);
+      localStorage.setItem('idolclash_playerId', res.playerId);
       showScreen('lobby');
       $('#lobby-code').textContent = res.code;
     } else {
@@ -1002,13 +1002,13 @@ socket.on('game-over', (data) => {
 
 $('#btn-quit').addEventListener('click', () => {
   if (!confirm('Leave this game?')) return;
-  localStorage.removeItem('fab5_code');
-  localStorage.removeItem('fab5_playerId');
+  localStorage.removeItem('idolclash_code');
+  localStorage.removeItem('idolclash_playerId');
   location.reload();
 });
 
 $('#btn-home').addEventListener('click', () => {
-  localStorage.removeItem('fab5_code');
-  localStorage.removeItem('fab5_playerId');
+  localStorage.removeItem('idolclash_code');
+  localStorage.removeItem('idolclash_playerId');
   location.reload();
 });

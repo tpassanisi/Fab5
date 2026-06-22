@@ -811,5 +811,5 @@ io.on('connection', (socket) => {
 
 const PORT = process.env.PORT || 3000;
 server.listen(PORT, () => {
-  console.log(`Fab 5 running on http://localhost:${PORT}`);
+  console.log(`Idol Clash running on http://localhost:${PORT}`);
 });

@@ -1,7 +1,7 @@
 {
-  "name": "fab5",
+  "name": "idol-clash",
   "version": "1.0.0",
-  "description": "Fab 5 - Famous Men card battle game",
+  "description": "Idol Clash - card battle game",
   "main": "server.js",
   "scripts": {
     "start": "node server.js",
