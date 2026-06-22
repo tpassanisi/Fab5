@@ -535,6 +535,7 @@ function renderCards() {
     const avatar = div.querySelector('.card-banner');
     if (avatar) {
       avatar.addEventListener('click', (e) => {
+        if (currentPhase === 'selecting-cards' || currentPhase === 'drafting') return;
         e.stopPropagation();
         showCardFullscreen(card);
       });
@@ -609,13 +610,6 @@ function renderDraftCards() {
         `).join('')}
       </div>
     `;
-    const avatar = div.querySelector('.card-banner');
-    if (avatar) {
-      avatar.addEventListener('click', (e) => {
-        e.stopPropagation();
-        showCardFullscreen(card);
-      });
-    }
     div.addEventListener('click', () => {
       if (currentPhase !== 'drafting') return;
       draftSelectedIdx = i;
