@@ -53,9 +53,9 @@ html, body {
 }
 
 .game-title {
-  font-size: 28px;
+  font-size: 34px;
   font-weight: 900;
-  letter-spacing: 4px;
+  letter-spacing: 5px;
   text-align: center;
   line-height: 1;
   white-space: nowrap;
