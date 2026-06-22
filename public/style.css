@@ -53,6 +53,7 @@ html, body {
 }
 
 .game-title {
+  font-family: 'Orbitron', sans-serif;
   font-size: 34px;
   font-weight: 900;
   letter-spacing: 5px;
