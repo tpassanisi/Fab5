@@ -11,7 +11,9 @@ function init(config) {
     waitForConnections: true,
     connectionLimit: 10,
   });
-  console.log('Database connected');
+  pool.getConnection()
+    .then(conn => { console.log('Database connected to', config.database); conn.release(); })
+    .catch(err => { console.error('Database connection FAILED:', err.message); pool = null; });
 }
 
 async function ensurePlayer(playerId, name) {
