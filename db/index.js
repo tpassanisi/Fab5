@@ -3,16 +3,24 @@ const mysql = require('mysql2/promise');
 let pool = null;
 
 function init(config) {
-  pool = mysql.createPool({
-    host: config.host || 'localhost',
-    user: config.user || 'root',
-    password: config.password || '',
-    database: config.database || 'fab5',
-    waitForConnections: true,
-    connectionLimit: 10,
-  });
+  if (typeof config === 'string') {
+    pool = mysql.createPool({
+      uri: config,
+      waitForConnections: true,
+      connectionLimit: 10,
+    });
+  } else {
+    pool = mysql.createPool({
+      host: config.host || 'localhost',
+      user: config.user || 'root',
+      password: config.password || '',
+      database: config.database || 'fab5',
+      waitForConnections: true,
+      connectionLimit: 10,
+    });
+  }
   pool.getConnection()
-    .then(conn => { console.log('Database connected to', config.database); conn.release(); })
+    .then(conn => { console.log('Database connected'); conn.release(); })
     .catch(err => { console.error('Database connection FAILED:', err.message); pool = null; });
 }
 

@@ -12,7 +12,9 @@ app.use(express.static('public'));
 app.use(express.json());
 
 // Initialize database if credentials are provided
-if (process.env.DB_HOST || process.env.DB_USER) {
+if (process.env.DATABASE_URL) {
+  db.init(process.env.DATABASE_URL);
+} else if (process.env.DB_HOST || process.env.DB_USER) {
   db.init({
     host: process.env.DB_HOST || 'localhost',
     user: process.env.DB_USER || 'root',
