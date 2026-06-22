@@ -15,6 +15,13 @@ let gameMode = 'classic';
 const $ = (sel) => document.querySelector(sel);
 const $$ = (sel) => document.querySelectorAll(sel);
 
+// Persistent device-based player ID
+let devicePlayerId = localStorage.getItem('idolclash_deviceId');
+if (!devicePlayerId) {
+  devicePlayerId = 'p_' + Math.random().toString(36).slice(2, 10) + Date.now().toString(36).slice(-4);
+  localStorage.setItem('idolclash_deviceId', devicePlayerId);
+}
+
 // Attempt rejoin on load
 (function tryRejoin() {
   const savedCode = localStorage.getItem('idolclash_code');
@@ -84,7 +91,7 @@ $('#btn-create').addEventListener('click', () => {
   const name = $('#player-name').value.trim();
   if (!name) { $('#home-error').textContent = 'Enter your name'; return; }
   saveName(name);
-  socket.emit('create-game', name, (res) => {
+  socket.emit('create-game', { name, deviceId: devicePlayerId }, (res) => {
     if (res.success) {
       myId = res.playerId;
       gameCode = res.code;
@@ -102,7 +109,7 @@ $('#btn-solo').addEventListener('click', () => {
   const name = $('#player-name').value.trim();
   if (!name) { $('#home-error').textContent = 'Enter your name'; return; }
   saveName(name);
-  socket.emit('create-solo-game', name, (res) => {
+  socket.emit('create-solo-game', { name, deviceId: devicePlayerId }, (res) => {
     if (res.success) {
       myId = res.playerId;
       gameCode = res.code;
@@ -150,7 +157,7 @@ $('#btn-join').addEventListener('click', () => {
   if (!name) { $('#home-error').textContent = 'Enter your name'; return; }
   if (!code) { $('#home-error').textContent = 'Enter a game code'; return; }
   saveName(name);
-  socket.emit('join-game', code, name, (res) => {
+  socket.emit('join-game', code, { name, deviceId: devicePlayerId }, (res) => {
     if (res.success) {
       myId = res.playerId;
       gameCode = res.code;
@@ -988,25 +995,27 @@ socket.on('game-over', (data) => {
   const isMe = data.winnerId === myId;
   $('#winner-text').textContent = isMe ? 'YOU WIN!' : `${data.winnerName} Wins!`;
 
-  const cardsLeft = data.winnerCards ? data.winnerCards.length : 0;
+  const displayCards = isMe
+    ? myCards.filter(c => !c.flipped)
+    : (data.winnerCards || []);
+  const cardsLeft = displayCards.length;
+
   $('#winner-sub').textContent = isMe
     ? `You won with ${cardsLeft} card${cardsLeft !== 1 ? 's' : ''} remaining!`
     : `${data.winnerName} won with ${cardsLeft} card${cardsLeft !== 1 ? 's' : ''} remaining`;
 
   const container = $('#winner-cards');
   container.innerHTML = '';
-  if (data.winnerCards) {
-    data.winnerCards.forEach(card => {
-      const div = document.createElement('div');
-      div.className = 'winner-card';
-      div.innerHTML = `
-        ${cardImageHTML(card)}
-        <div class="card-name">${card.name}</div>
-      `;
-      div.querySelector('.card-banner').addEventListener('click', () => showCardFullscreen(card));
-      container.appendChild(div);
-    });
-  }
+  displayCards.forEach(card => {
+    const div = document.createElement('div');
+    div.className = 'winner-card';
+    div.innerHTML = `
+      ${cardImageHTML(card)}
+      <div class="card-name">${card.name}</div>
+    `;
+    div.querySelector('.card-banner').addEventListener('click', () => showCardFullscreen(card));
+    container.appendChild(div);
+  });
 });
 
 $('#btn-quit').addEventListener('click', () => {
