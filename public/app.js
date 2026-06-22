@@ -882,12 +882,12 @@ function showCardSelection(data) {
     <button class="btn-confirm-card" id="btn-confirm" style="display:none">Lock In Card</button>
   `;
 
-  document.querySelectorAll('.card:not(.flipped)').forEach(c => c.classList.add('selectable'));
+  $('#your-cards').querySelectorAll('.card:not(.flipped)').forEach(c => c.classList.add('selectable'));
 
   $('#btn-confirm').addEventListener('click', () => {
     if (selectedCardIdx !== null) {
       socket.emit('select-card', selectedCardIdx);
-      document.querySelectorAll('.card').forEach(c => {
+      $('#your-cards').querySelectorAll('.card').forEach(c => {
         c.classList.remove('selectable');
         c.style.pointerEvents = 'none';
       });
@@ -903,7 +903,7 @@ function onCardTap(index) {
   if (myCards[index].flipped) return;
 
   selectedCardIdx = index;
-  document.querySelectorAll('.card').forEach((c, i) => {
+  $('#your-cards').querySelectorAll('.card').forEach((c, i) => {
     c.classList.toggle('selected', i === index);
   });
 
@@ -965,7 +965,7 @@ socket.on('round-result', (data) => {
   $('#btn-continue').addEventListener('click', () => processPendingNextTurn());
 
   selectedCardIdx = null;
-  document.querySelectorAll('.card').forEach(c => {
+  $('#your-cards').querySelectorAll('.card').forEach(c => {
     c.classList.remove('selectable', 'selected');
     c.style.pointerEvents = '';
   });

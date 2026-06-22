@@ -733,7 +733,7 @@ input:focus { border-color: var(--neon-blue); box-shadow: 0 0 10px rgba(0,240,25
   margin-top: 8px;
   padding: 10px 32px;
   background: var(--green);
-  color: #fff;
+  color: #0a0a1a;
   border: none;
   border-radius: 10px;
   font-size: 15px;
