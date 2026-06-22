@@ -491,19 +491,10 @@ function showDraftScreen() {
       <div class="draft-title">Choose a card to remove</div>
       <div class="draft-sub">You have 6 cards — discard 1 to start with 5</div>
     </div>
-    <button class="btn btn-primary btn-draft-confirm" id="btn-draft-confirm" style="display:none">Remove Card</button>
   `;
 
   draftSelectedIdx = null;
   renderDraftCards();
-
-  $('#btn-draft-confirm').addEventListener('click', () => {
-    if (draftSelectedIdx === null) return;
-    socket.emit('discard-card', draftSelectedIdx);
-    $('#btn-draft-confirm').style.display = 'none';
-    $('#game-area').innerHTML = `<div class="game-message">Waiting for other players...</div>`;
-    draftSelectedIdx = null;
-  });
 }
 
 function renderDraftCards() {
@@ -537,11 +528,24 @@ function renderDraftCards() {
       if (currentPhase !== 'drafting') return;
       draftSelectedIdx = i;
       renderDraftCards();
-      const btn = $('#btn-draft-confirm');
-      if (btn) btn.style.display = 'block';
     });
     container.appendChild(div);
   });
+
+  // Add confirm button at the bottom of the card tray
+  if (draftSelectedIdx !== null) {
+    const btnDiv = document.createElement('div');
+    btnDiv.className = 'draft-confirm-wrapper';
+    btnDiv.innerHTML = `<button class="btn btn-primary btn-draft-confirm">Remove Card</button>`;
+    btnDiv.querySelector('button').addEventListener('click', () => {
+      if (draftSelectedIdx === null) return;
+      socket.emit('discard-card', draftSelectedIdx);
+      draftSelectedIdx = null;
+      container.innerHTML = '';
+      $('#game-area').innerHTML = `<div class="game-message">Waiting for other players...</div>`;
+    });
+    container.appendChild(btnDiv);
+  }
 }
 
 socket.on('player-discarded', (data) => {

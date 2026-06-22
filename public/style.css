@@ -692,9 +692,14 @@ input:focus { border-color: var(--neon-blue); box-shadow: 0 0 10px rgba(0,240,25
   font-size: 13px;
   color: var(--text2);
 }
+.draft-confirm-wrapper {
+  grid-column: 1 / -1;
+  text-align: center;
+  padding: 4px 0;
+}
 .btn-draft-confirm {
   max-width: 200px;
-  margin-top: 8px;
+  margin: 0 auto;
   background: var(--red);
 }
 .card.draft-selected {
