@@ -523,7 +523,6 @@ input:focus { border-color: var(--neon-blue); box-shadow: 0 0 10px rgba(0,240,25
 }
 .card .card-total {
   font-weight: 700;
-  color: #ffb347;
 }
 .card .card-stats {
   display: grid;
@@ -816,7 +815,6 @@ input:focus { border-color: var(--neon-blue); box-shadow: 0 0 10px rgba(0,240,25
 }
 .card-fs-total {
   font-weight: 700;
-  color: #ffb347;
 }
 .card-fs-stats {
   display: grid;
