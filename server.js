@@ -36,6 +36,11 @@ app.get('/api/card/:id', async (req, res) => {
   res.json(stats);
 });
 
+app.get('/api/random-card', (req, res) => {
+  const card = cards[Math.floor(Math.random() * cards.length)];
+  res.json(card);
+});
+
 app.get('/api/card-stats-all', async (req, res) => {
   const stats = await db.getAllCardStats();
   res.json(stats || {});

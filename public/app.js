@@ -131,16 +131,53 @@ function showSoloModeSelect() {
       </div>
       <div class="mode-desc" id="solo-mode-desc">Stats visible on all cards</div>
     </div>
+    <div class="mode-preview-card" id="mode-preview-card"></div>
     <button class="btn btn-primary" id="btn-solo-start">Start Game</button>
   `;
 
   let soloMode = 'classic';
+  let previewCard = null;
+  let previewStats = [];
+
+  fetch('/api/random-card').then(r => r.json()).then(card => {
+    previewCard = card;
+    const allKeys = Object.keys(ALL_CATEGORY_LABELS);
+    const shuffled = allKeys.sort(() => Math.random() - 0.5);
+    previewStats = shuffled.slice(0, 6);
+    renderModePreview(soloMode);
+  }).catch(() => {});
+
+  function renderModePreview(mode) {
+    if (!previewCard) return;
+    const card = previewCard;
+    const container = $('#mode-preview-card');
+    container.innerHTML = `
+      <div class="card mode-card-preview">
+        ${cardImageHTML(card)}
+        <div class="card-name">${card.name}</div>
+        <div class="card-cat-row"><span>${card.category}</span><span class="card-wl-total"><span class="card-wl">${getCardWL(card.id)}</span> ${cardTotal(card)}</span></div>
+        ${mode === 'pro'
+          ? '<div class="card-stats-hidden">PRO</div>'
+          : `<div class="card-stats">
+              ${previewStats.map(k => `
+                <div class="stat">
+                  <span>${ALL_CATEGORY_LABELS[k]}</span>
+                  <span class="stat-val">${card[k]}</span>
+                </div>
+              `).join('')}
+            </div>`
+        }
+      </div>
+    `;
+  }
+
   document.querySelectorAll('.btn-mode').forEach(btn => {
     btn.addEventListener('click', () => {
       soloMode = btn.dataset.mode;
       document.querySelectorAll('.btn-mode').forEach(b => b.classList.remove('active'));
       btn.classList.add('active');
       $('#solo-mode-desc').textContent = MODE_DESCS[soloMode];
+      renderModePreview(soloMode);
     });
   });
 
@@ -271,24 +308,64 @@ const MODE_DESCS = {
   pro: 'Stats hidden — play from memory!',
 };
 
+let lobbyPreviewCard = null;
+let lobbyPreviewStats = [];
+let lobbyMode = 'classic';
+
 function setupModeSelect() {
-  document.querySelectorAll('.btn-mode').forEach(btn => {
+  if (!lobbyPreviewCard) {
+    fetch('/api/random-card').then(r => r.json()).then(card => {
+      lobbyPreviewCard = card;
+      const allKeys = Object.keys(ALL_CATEGORY_LABELS);
+      lobbyPreviewStats = allKeys.sort(() => Math.random() - 0.5).slice(0, 6);
+      renderLobbyPreview();
+    }).catch(() => {});
+  }
+
+  document.querySelectorAll('#mode-select .btn-mode').forEach(btn => {
     btn.addEventListener('click', () => {
-      const mode = btn.dataset.mode;
-      document.querySelectorAll('.btn-mode').forEach(b => b.classList.remove('active'));
+      lobbyMode = btn.dataset.mode;
+      document.querySelectorAll('#mode-select .btn-mode').forEach(b => b.classList.remove('active'));
       btn.classList.add('active');
-      $('#mode-desc').textContent = MODE_DESCS[mode];
-      socket.emit('set-mode', mode);
+      $('#mode-desc').textContent = MODE_DESCS[lobbyMode];
+      socket.emit('set-mode', lobbyMode);
+      renderLobbyPreview();
     });
   });
 }
 
+function renderLobbyPreview() {
+  const container = $('#lobby-preview-card');
+  if (!container || !lobbyPreviewCard) return;
+  const card = lobbyPreviewCard;
+  container.innerHTML = `
+    <div class="card mode-card-preview">
+      ${cardImageHTML(card)}
+      <div class="card-name">${card.name}</div>
+      <div class="card-cat-row"><span>${card.category}</span><span class="card-wl-total"><span class="card-wl">${getCardWL(card.id)}</span> ${cardTotal(card)}</span></div>
+      ${lobbyMode === 'pro'
+        ? '<div class="card-stats-hidden">PRO</div>'
+        : `<div class="card-stats">
+            ${lobbyPreviewStats.map(k => `
+              <div class="stat">
+                <span>${ALL_CATEGORY_LABELS[k]}</span>
+                <span class="stat-val">${card[k]}</span>
+              </div>
+            `).join('')}
+          </div>`
+      }
+    </div>
+  `;
+}
+
 socket.on('mode-update', (data) => {
+  lobbyMode = data.mode;
   const modeDesc = $('#mode-desc');
   if (modeDesc) modeDesc.textContent = MODE_DESCS[data.mode];
-  document.querySelectorAll('.btn-mode').forEach(b => {
+  document.querySelectorAll('#mode-select .btn-mode').forEach(b => {
     b.classList.toggle('active', b.dataset.mode === data.mode);
   });
+  renderLobbyPreview();
 });
 
 $('#btn-start').addEventListener('click', () => {

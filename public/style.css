@@ -214,6 +214,15 @@ input:focus { border-color: var(--neon-blue); box-shadow: 0 0 10px rgba(0,240,25
 }
 .mode-desc { font-size: 12px; color: var(--text2); margin-top: 6px; }
 
+.mode-preview-card {
+  display: flex;
+  justify-content: center;
+  margin: 12px 0;
+}
+.mode-card-preview {
+  width: 160px;
+}
+
 /* GAME */
 #screen-game {
   flex-direction: column;
