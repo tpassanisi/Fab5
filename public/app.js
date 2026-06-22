@@ -73,7 +73,7 @@ function getCardWL(cardId) {
 }
 
 // Random splash image
-const splashIdx = Math.floor(Math.random() * 5) + 1;
+const splashIdx = Math.floor(Math.random() * 7) + 1;
 $('#splash-img').src = `/images/splash_mashup/splash_${splashIdx}.png`;
 
 // Restore saved name

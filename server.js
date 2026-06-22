@@ -136,12 +136,30 @@ function botRollOpponent(game) {
   setTimeout(() => botRollCategory(game), 1500);
 }
 
+function rollCategory(game) {
+  let roll;
+  let attempts = 0;
+  do {
+    roll = rollDice();
+    attempts++;
+  } while (
+    attempts < 20 &&
+    game.categoryHistory && game.categoryHistory.length >= 2 &&
+    game.categoryHistory[game.categoryHistory.length - 1] === game.activeCategories[roll - 1].key &&
+    game.categoryHistory[game.categoryHistory.length - 2] === game.activeCategories[roll - 1].key
+  );
+  const key = game.activeCategories[roll - 1].key;
+  if (!game.categoryHistory) game.categoryHistory = [];
+  game.categoryHistory.push(key);
+  return { roll, key };
+}
+
 function botRollCategory(game) {
   if (game.phase !== 'rolling-category') return;
 
-  const roll = rollDice();
+  const { roll, key } = rollCategory(game);
   game.categoryRoll = roll;
-  game.category = game.activeCategories[roll - 1].key;
+  game.category = key;
   game.phase = 'selecting-cards';
   game.attackerCard = null;
   game.defenderCard = null;
@@ -643,9 +661,9 @@ io.on('connection', (socket) => {
     if (playerId !== game.currentTurnPlayerId) return;
     if (game.phase !== 'rolling-category') return;
 
-    const roll = rollDice();
+    const { roll, key } = rollCategory(game);
     game.categoryRoll = roll;
-    game.category = game.activeCategories[roll - 1].key;
+    game.category = key;
     game.phase = 'selecting-cards';
     game.attackerCard = null;
     game.defenderCard = null;
