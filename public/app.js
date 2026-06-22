@@ -354,6 +354,10 @@ function getInitials(name) {
   return name.replace(/[&]/g, '').split(/\s+/).map(w => w[0]).filter(Boolean).slice(0, 2).join('').toUpperCase();
 }
 
+function cardTotal(card) {
+  return Object.keys(ALL_CATEGORY_LABELS).reduce((sum, k) => sum + (card[k] || 0), 0);
+}
+
 function cardImgSrc(card) {
   const filename = card.name.replace(/\s+/g, '_').replace(/[^a-zA-Z0-9_\-àáâãäåèéêëìíîïòóôõöùúûüýÿñçšžÀÁÂÃÄÅÈÉÊËÌÍÎÏÒÓÔÕÖÙÚÛÜÝŸÑÇŠŽ]/g, '');
   return `/images/cards/${filename}.png`;
@@ -384,7 +388,7 @@ function showCardFullscreen(card) {
         <img class="card-banner-img" src="${src}" alt="" loading="lazy" onerror="this.style.display='none'">
       </div>
       <div class="card-fs-name">${card.name}</div>
-      <div class="card-fs-cat">${card.category}</div>
+      <div class="card-fs-cat-row"><span>${card.category}</span><span class="card-fs-total">${cardTotal(card)}</span></div>
       <div class="card-fs-stats">
         ${allStats.map(k => {
           const isActive = activeCategories.includes(k);
@@ -422,7 +426,7 @@ function renderCards() {
     div.innerHTML = `
       ${cardImageHTML(card)}
       <div class="card-name">${card.name}</div>
-      <div class="card-cat">${card.category}</div>
+      <div class="card-cat-row"><span>${card.category}</span><span class="card-total">${cardTotal(card)}</span></div>
       ${hideStats ? '<div class="card-stats-hidden">PRO</div>' : `<div class="card-stats">
         ${Object.keys(CATEGORY_LABELS).map(k => `
           <div class="stat${k === highlightCat ? ' highlight' : ''}">
@@ -500,7 +504,7 @@ function renderDraftCards() {
     div.innerHTML = `
       ${cardImageHTML(card)}
       <div class="card-name">${card.name}</div>
-      <div class="card-cat">${card.category}</div>
+      <div class="card-cat-row"><span>${card.category}</span><span class="card-total">${cardTotal(card)}</span></div>
       <div class="card-stats">
         ${Object.keys(CATEGORY_LABELS).map(k => `
           <div class="stat">
@@ -648,7 +652,7 @@ function renderViewingCards(cards, targetId) {
     div.innerHTML = `
       ${cardImageHTML(card)}
       <div class="card-name">${card.name}</div>
-      <div class="card-cat">${card.category}</div>
+      <div class="card-cat-row"><span>${card.category}</span><span class="card-total">${cardTotal(card)}</span></div>
     `;
     const avatar = div.querySelector('.card-banner');
     if (avatar) {
