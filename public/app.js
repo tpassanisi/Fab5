@@ -58,6 +58,10 @@ function showScreen(id) {
   $(`#screen-${id}`).classList.add('active');
 }
 
+// Random splash image
+const splashIdx = Math.floor(Math.random() * 5) + 1;
+$('#splash-img').src = `/images/splash_mashup/splash_${splashIdx}.png`;
+
 // Restore saved name
 const savedName = document.cookie.match(/fab5_name=([^;]+)/);
 if (savedName) $('#player-name').value = decodeURIComponent(savedName[1]);
