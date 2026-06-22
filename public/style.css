@@ -530,8 +530,14 @@ input:focus { border-color: var(--neon-blue); box-shadow: 0 0 10px rgba(0,240,25
   color: var(--text2);
   margin-bottom: 6px;
 }
-.card .card-total {
+.card .card-wl-total {
   font-weight: 700;
+}
+.card .card-wl {
+  font-weight: 400;
+  font-size: 10px;
+  opacity: 0.7;
+  margin-right: 2px;
 }
 .card .card-stats {
   display: grid;
@@ -822,8 +828,14 @@ input:focus { border-color: var(--neon-blue); box-shadow: 0 0 10px rgba(0,240,25
   color: var(--text2);
   margin-bottom: 16px;
 }
-.card-fs-total {
+.card-fs-wl-total {
   font-weight: 700;
+}
+.card-fs-wl {
+  font-weight: 400;
+  font-size: 11px;
+  opacity: 0.7;
+  margin-right: 4px;
 }
 .card-fs-stats {
   display: grid;

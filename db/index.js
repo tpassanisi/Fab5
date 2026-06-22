@@ -108,6 +108,16 @@ async function getPlayerStats(playerId) {
   return { ...rows[0], cards: cardRows };
 }
 
+async function getAllCardStats() {
+  if (!pool) return {};
+  const [rows] = await pool.execute(
+    'SELECT card_id, wins, losses FROM card_stats WHERE times_played > 0'
+  );
+  const map = {};
+  rows.forEach(r => { map[r.card_id] = { w: r.wins, l: r.losses }; });
+  return map;
+}
+
 async function getCardStats(cardId) {
   if (!pool) return null;
   const [rows] = await pool.execute(
@@ -139,4 +149,4 @@ async function getTopCards() {
   return rows;
 }
 
-module.exports = { init, ensurePlayer, recordRound, recordGameWin, recordGameLoss, getPlayerStats, getCardStats, getLeaderboard, getTopCards };
+module.exports = { init, ensurePlayer, recordRound, recordGameWin, recordGameLoss, getPlayerStats, getCardStats, getAllCardStats, getLeaderboard, getTopCards };

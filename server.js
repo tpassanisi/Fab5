@@ -36,6 +36,11 @@ app.get('/api/card/:id', async (req, res) => {
   res.json(stats);
 });
 
+app.get('/api/card-stats-all', async (req, res) => {
+  const stats = await db.getAllCardStats();
+  res.json(stats || {});
+});
+
 app.get('/api/leaderboard', async (req, res) => {
   res.json(await db.getLeaderboard());
 });

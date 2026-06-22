@@ -58,6 +58,15 @@ function showScreen(id) {
   $(`#screen-${id}`).classList.add('active');
 }
 
+// Card W-L stats cache
+let cardWL = {};
+fetch('/api/card-stats-all').then(r => r.json()).then(d => { cardWL = d; }).catch(() => {});
+
+function getCardWL(cardId) {
+  const s = cardWL[cardId];
+  return s ? `${s.w}-${s.l}` : '';
+}
+
 // Random splash image
 const splashIdx = Math.floor(Math.random() * 5) + 1;
 $('#splash-img').src = `/images/splash_mashup/splash_${splashIdx}.png`;
@@ -392,7 +401,7 @@ function showCardFullscreen(card) {
         <img class="card-banner-img" src="${src}" alt="" loading="lazy" onerror="this.style.display='none'">
       </div>
       <div class="card-fs-name">${card.name}</div>
-      <div class="card-fs-cat-row"><span>${card.category}</span><span class="card-fs-total">${cardTotal(card)}</span></div>
+      <div class="card-fs-cat-row"><span>${card.category}</span><span class="card-fs-wl-total"><span class="card-fs-wl">${getCardWL(card.id)}</span> ${cardTotal(card)}</span></div>
       <div class="card-fs-stats">
         ${allStats.map(k => {
           const isActive = activeCategories.includes(k);
@@ -430,7 +439,7 @@ function renderCards() {
     div.innerHTML = `
       ${cardImageHTML(card)}
       <div class="card-name">${card.name}</div>
-      <div class="card-cat-row"><span>${card.category}</span><span class="card-total">${cardTotal(card)}</span></div>
+      <div class="card-cat-row"><span>${card.category}</span><span class="card-wl-total"><span class="card-wl">${getCardWL(card.id)}</span> ${cardTotal(card)}</span></div>
       ${hideStats ? '<div class="card-stats-hidden">PRO</div>' : `<div class="card-stats">
         ${Object.keys(CATEGORY_LABELS).map(k => `
           <div class="stat${k === highlightCat ? ' highlight' : ''}">
@@ -508,7 +517,7 @@ function renderDraftCards() {
     div.innerHTML = `
       ${cardImageHTML(card)}
       <div class="card-name">${card.name}</div>
-      <div class="card-cat-row"><span>${card.category}</span><span class="card-total">${cardTotal(card)}</span></div>
+      <div class="card-cat-row"><span>${card.category}</span><span class="card-wl-total"><span class="card-wl">${getCardWL(card.id)}</span> ${cardTotal(card)}</span></div>
       <div class="card-stats">
         ${Object.keys(CATEGORY_LABELS).map(k => `
           <div class="stat">
@@ -656,7 +665,7 @@ function renderViewingCards(cards, targetId) {
     div.innerHTML = `
       ${cardImageHTML(card)}
       <div class="card-name">${card.name}</div>
-      <div class="card-cat-row"><span>${card.category}</span><span class="card-total">${cardTotal(card)}</span></div>
+      <div class="card-cat-row"><span>${card.category}</span><span class="card-wl-total"><span class="card-wl">${getCardWL(card.id)}</span> ${cardTotal(card)}</span></div>
     `;
     const avatar = div.querySelector('.card-banner');
     if (avatar) {
