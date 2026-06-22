@@ -403,8 +403,8 @@ io.on('connection', (socket) => {
   let playerId = null;
 
   socket.on('create-game', (data, cb) => {
-    const name = typeof data === 'string' ? data : data.name;
-    const deviceId = typeof data === 'object' ? data.deviceId : null;
+    const name = String((typeof data === 'string' ? data : (data && data.name)) || 'Player');
+    const deviceId = (data && typeof data === 'object') ? data.deviceId : null;
     let code;
     do { code = generateCode(); } while (games[code]);
 
@@ -445,8 +445,8 @@ io.on('connection', (socket) => {
   });
 
   socket.on('create-solo-game', (data, cb) => {
-    const name = typeof data === 'string' ? data : data.name;
-    const deviceId = typeof data === 'object' ? data.deviceId : null;
+    const name = String((typeof data === 'string' ? data : (data && data.name)) || 'Player');
+    const deviceId = (data && typeof data === 'object') ? data.deviceId : null;
     let code;
     do { code = generateCode(); } while (games[code]);
 
@@ -528,8 +528,8 @@ io.on('connection', (socket) => {
   });
 
   socket.on('join-game', (code, data, cb) => {
-    const name = typeof data === 'string' ? data : data.name;
-    const deviceId = typeof data === 'object' ? data.deviceId : null;
+    const name = String((typeof data === 'string' ? data : (data && data.name)) || 'Player');
+    const deviceId = (data && typeof data === 'object') ? data.deviceId : null;
     const game = games[code.toUpperCase()];
     if (!game) return cb({ success: false, error: 'Game not found' });
     if (game.started) return cb({ success: false, error: 'Game already started' });
