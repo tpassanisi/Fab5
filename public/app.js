@@ -25,10 +25,9 @@ if (!devicePlayerId) {
 // Attempt rejoin on load
 (function tryRejoin() {
   const savedCode = localStorage.getItem('idolclash_code');
-  const savedId = localStorage.getItem('idolclash_playerId');
-  if (!savedCode || !savedId) return;
+  if (!savedCode || !devicePlayerId) return;
 
-  socket.emit('rejoin-game', { code: savedCode, playerId: savedId }, (res) => {
+  socket.emit('rejoin-game', { code: savedCode, playerId: devicePlayerId }, (res) => {
     if (res.success) {
       myId = res.playerId;
       gameCode = res.code;
@@ -38,7 +37,6 @@ if (!devicePlayerId) {
       }
     } else {
       localStorage.removeItem('idolclash_code');
-      localStorage.removeItem('idolclash_playerId');
     }
   });
 })();
@@ -97,7 +95,7 @@ $('#btn-create').addEventListener('click', () => {
       gameCode = res.code;
       isHost = true;
       localStorage.setItem('idolclash_code', res.code);
-      localStorage.setItem('idolclash_playerId', res.playerId);
+
       showScreen('lobby');
       $('#lobby-code').textContent = res.code;
       socket.emit('request-lobby');
@@ -115,7 +113,7 @@ $('#btn-solo').addEventListener('click', () => {
       gameCode = res.code;
       isHost = true;
       localStorage.setItem('idolclash_code', res.code);
-      localStorage.setItem('idolclash_playerId', res.playerId);
+
       showSoloModeSelect();
     }
   });
@@ -163,7 +161,7 @@ $('#btn-join').addEventListener('click', () => {
       gameCode = res.code;
       isHost = false;
       localStorage.setItem('idolclash_code', res.code);
-      localStorage.setItem('idolclash_playerId', res.playerId);
+
       showScreen('lobby');
       $('#lobby-code').textContent = res.code;
     } else {
@@ -1021,12 +1019,40 @@ socket.on('game-over', (data) => {
 $('#btn-quit').addEventListener('click', () => {
   if (!confirm('Leave this game?')) return;
   localStorage.removeItem('idolclash_code');
-  localStorage.removeItem('idolclash_playerId');
+
   location.reload();
 });
 
 $('#btn-home').addEventListener('click', () => {
   localStorage.removeItem('idolclash_code');
-  localStorage.removeItem('idolclash_playerId');
+
   location.reload();
+});
+
+// LEADERBOARD
+$('#btn-leaderboard').addEventListener('click', () => {
+  showScreen('leaderboard');
+  $('#lb-list').innerHTML = '<div class="game-message">Loading...</div>';
+  fetch('/api/leaderboard').then(r => r.json()).then(rows => {
+    if (!rows.length) {
+      $('#lb-list').innerHTML = '<div class="game-message">No games played yet</div>';
+      return;
+    }
+    $('#lb-list').innerHTML = rows.map((r, i) => {
+      const isMe = r.name === ($('#player-name').value.trim());
+      const winRate = r.games_played ? Math.round(r.wins / r.games_played * 100) : 0;
+      return `<div class="lb-row${isMe ? ' lb-me' : ''}">
+        <span class="lb-rank">${i + 1}</span>
+        <span class="lb-name">${r.name}</span>
+        <span class="lb-record">${r.wins}-${r.losses}</span>
+        <span class="lb-rate">${winRate}%</span>
+      </div>`;
+    }).join('');
+  }).catch(() => {
+    $('#lb-list').innerHTML = '<div class="game-message">Could not load leaderboard</div>';
+  });
+});
+
+$('#btn-lb-back').addEventListener('click', () => {
+  showScreen('home');
 });

@@ -384,11 +384,13 @@ io.on('connection', (socket) => {
   let currentGame = null;
   let playerId = null;
 
-  socket.on('create-game', (name, cb) => {
+  socket.on('create-game', (data, cb) => {
+    const name = typeof data === 'string' ? data : data.name;
+    const deviceId = typeof data === 'object' ? data.deviceId : null;
     let code;
     do { code = generateCode(); } while (games[code]);
 
-    playerId = generatePlayerId();
+    playerId = deviceId || generatePlayerId();
     socketToPlayer[socket.id] = playerId;
     db.ensurePlayer(playerId, name).catch(() => {});
     const game = {
@@ -424,13 +426,16 @@ io.on('connection', (socket) => {
     io.to(currentGame).emit('mode-update', { mode });
   });
 
-  socket.on('create-solo-game', (name, cb) => {
+  socket.on('create-solo-game', (data, cb) => {
+    const name = typeof data === 'string' ? data : data.name;
+    const deviceId = typeof data === 'object' ? data.deviceId : null;
     let code;
     do { code = generateCode(); } while (games[code]);
 
-    playerId = generatePlayerId();
+    playerId = deviceId || generatePlayerId();
     const botId = generatePlayerId();
     socketToPlayer[socket.id] = playerId;
+    db.ensurePlayer(playerId, name).catch(() => {});
 
     const game = {
       code,
@@ -504,13 +509,15 @@ io.on('connection', (socket) => {
     bot.discarded = true;
   });
 
-  socket.on('join-game', (code, name, cb) => {
+  socket.on('join-game', (code, data, cb) => {
+    const name = typeof data === 'string' ? data : data.name;
+    const deviceId = typeof data === 'object' ? data.deviceId : null;
     const game = games[code.toUpperCase()];
     if (!game) return cb({ success: false, error: 'Game not found' });
     if (game.started) return cb({ success: false, error: 'Game already started' });
     if (game.players.length >= 6) return cb({ success: false, error: 'Game is full' });
 
-    playerId = generatePlayerId();
+    playerId = deviceId || generatePlayerId();
     socketToPlayer[socket.id] = playerId;
     db.ensurePlayer(playerId, name).catch(() => {});
     game.players.push({ id: playerId, name, cards: [], connected: true });

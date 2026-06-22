@@ -616,6 +616,71 @@ input:focus { border-color: var(--neon-blue); box-shadow: 0 0 10px rgba(0,240,25
   -webkit-text-fill-color: transparent;
   text-shadow: 0 0 30px rgba(0,240,255,0.3);
 }
+/* LEADERBOARD */
+.leaderboard-content {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  padding: 30px 20px;
+  width: 100%;
+  min-height: 100%;
+}
+.lb-title {
+  font-size: 22px;
+  font-weight: 800;
+  color: var(--neon-blue);
+  text-shadow: 0 0 10px rgba(0,240,255,0.4);
+  margin-bottom: 16px;
+}
+.lb-list {
+  width: 100%;
+  max-width: 380px;
+}
+.lb-row {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  padding: 10px 12px;
+  border-bottom: 1px solid rgba(0,240,255,0.1);
+}
+.lb-row.lb-me {
+  background: rgba(0,240,255,0.08);
+  border: 1px solid rgba(0,240,255,0.2);
+}
+.lb-rank {
+  font-size: 14px;
+  font-weight: 800;
+  color: var(--neon-pink);
+  width: 24px;
+  text-align: center;
+}
+.lb-name {
+  flex: 1;
+  font-size: 14px;
+  font-weight: 600;
+}
+.lb-record {
+  font-size: 13px;
+  color: var(--text2);
+}
+.lb-rate {
+  font-size: 13px;
+  font-weight: 700;
+  color: #ffb347;
+  width: 36px;
+  text-align: right;
+}
+
+.btn-link {
+  background: none;
+  border: none;
+  color: var(--text2);
+  font-size: 13px;
+  cursor: pointer;
+  margin-top: 12px;
+  text-decoration: underline;
+}
+
 .play-again-text { color: var(--text2); margin-bottom: 16px; }
 
 .winner-cards {
