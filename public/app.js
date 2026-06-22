@@ -486,13 +486,6 @@ function showCategoryReveal(onComplete) {
 
 function showDraftScreen() {
   $('#game-area').classList.remove('expanded');
-  $('#game-area').innerHTML = `
-    <div class="draft-prompt">
-      <div class="draft-title">Choose a card to remove</div>
-      <div class="draft-sub">You have 6 cards — discard 1 to start with 5</div>
-    </div>
-  `;
-
   draftSelectedIdx = null;
   renderDraftCards();
 }
@@ -532,19 +525,30 @@ function renderDraftCards() {
     container.appendChild(div);
   });
 
-  // Add confirm button at the bottom of the card tray
+  // Show confirm button in the game area
+  const gameArea = $('#game-area');
   if (draftSelectedIdx !== null) {
-    const btnDiv = document.createElement('div');
-    btnDiv.className = 'draft-confirm-wrapper';
-    btnDiv.innerHTML = `<button class="btn btn-primary btn-draft-confirm">Remove Card</button>`;
-    btnDiv.querySelector('button').addEventListener('click', () => {
+    const selectedName = myCards[draftSelectedIdx]?.name || '';
+    gameArea.innerHTML = `
+      <div class="draft-prompt">
+        <div class="draft-sub">Remove <strong>${selectedName}</strong>?</div>
+      </div>
+      <button class="btn btn-primary btn-draft-confirm" id="btn-draft-confirm">Remove Card</button>
+    `;
+    $('#btn-draft-confirm').addEventListener('click', () => {
       if (draftSelectedIdx === null) return;
       socket.emit('discard-card', draftSelectedIdx);
       draftSelectedIdx = null;
       container.innerHTML = '';
-      $('#game-area').innerHTML = `<div class="game-message">Waiting for other players...</div>`;
+      gameArea.innerHTML = `<div class="game-message">Waiting for other players...</div>`;
     });
-    container.appendChild(btnDiv);
+  } else {
+    gameArea.innerHTML = `
+      <div class="draft-prompt">
+        <div class="draft-title">Choose a card to remove</div>
+        <div class="draft-sub">You have 6 cards — discard 1 to start with 5</div>
+      </div>
+    `;
   }
 }
 
